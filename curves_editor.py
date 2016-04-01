@@ -5,14 +5,21 @@ import sys
 import matplotlib as mp
 import numpy as np
 from matplotlib.backends.backend_qt5agg import (
-    FigureCanvasQTAgg as FigureCanvas
+    FigureCanvasQTAgg as FigureCanvas,
+    NavigationToolbar2QT as NavigationToolbar
 )
 from matplotlib.figure import Figure
 from PIL import Image
-from PyQt5 import QtCore, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUiType
 
 Ui_MainWindow, QMainWindow = loadUiType("curves_editor_design.ui")
+TOOLITEMS = (
+    ('Przesuń', 'PPM - przesuń skalę, LPM - przybliż/oddal skalę', 'move', 'pan'),
+    ('Zoom', 'Przybliż krzywą', 'zoom_to_rect', 'zoom'),
+    (None, None, None, None),
+    ('Krzywa', 'Konfiguruj krzywą', 'subplots', 'configure_subplots'),
+)
 
 
 class CurvesEditor(QMainWindow, Ui_MainWindow):
@@ -20,15 +27,22 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     Main class for curves editor
     """
 
+    figures = {}
     canvas = None
     current_figure = None
-    figures = {}
+    lines = None
+    toolbar = None
 
     def __init__(self):
         super(CurvesEditor, self).__init__()
         self.setupUi(self)
+        self.custom_settings()
         self.bind_actions()
         self.show()
+
+    def custom_settings(self):
+        self.points.setColumnWidth(0, 99)
+        self.points.setColumnWidth(1, 99)
 
     def bind_actions(self):
         """
@@ -40,15 +54,38 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.action_save_as.triggered.connect(self.save_file)
         self.action_exit.triggered.connect(QtCore.QCoreApplication.quit)
 
-        self.action_add_background.triggered.connect(self.open_image)
         self.action_interpolate.triggered.connect(self.draw_interpolate_curve)
         self.action_bezier.triggered.connect(self.draw_bezier_curve)
 
         self.figures_list.itemClicked.connect(self.change_fig)
 
+    def add_toolbar(self):
+        def _icon(name):
+            basedir = os.path.join(mp.rcParams['datapath'], 'images')
+            return QtGui.QIcon(os.path.join(basedir, name))
+
+        NavigationToolbar.toolitems = TOOLITEMS
+        self.toolbar = NavigationToolbar(self.canvas, self.draw_view)
+        extended_toolitems = (
+            ('Tło', 'Dodaj tło', 'background', 'configure_background'),
+        )
+
+        for text, tooltip_text, image_file, callback in extended_toolitems:
+            a = self.toolbar.addAction(
+                _icon(image_file + '.png'),
+                text,
+                getattr(self, callback)
+            )
+
+            if tooltip_text is not None:
+                a.setToolTip(tooltip_text)
+
+        self.draw_layout.addWidget(self.toolbar)
+
     def change_fig(self, item):
         fig_name = item.text()
         self.current_figure = self.figures[fig_name]
+        self.line = self.current_figure.axes[0].lines[0]
         self.update_plot()
 
     def clear_all(self):
@@ -56,7 +93,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Clear all and create new file
         """
         self.current_figure = None
-        self.figures = None
+        self.figures = {}
         self.remove_plot()
         self.figures_list.clear()
 
@@ -81,19 +118,21 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             with f:
                 data = f.read()
 
-    def open_image(self):
+    def configure_background(self):
         """
         Open file with image and draw as background
         """
         filename = self.open_file()
-        img = Image.open(filename)
-        ax = self.current_figure.axes[0]
 
-        x0, x1 = ax.get_xlim()
-        y0, y1 = ax.get_ylim()
-        ax.imshow(img, extent=[x0, x1, y0, y1], aspect='auto')
+        if filename:
+            img = Image.open(filename)
+            ax = self.current_figure.axes[0]
 
-        self.update_plot()
+            x0, x1 = ax.get_xlim()
+            y0, y1 = ax.get_ylim()
+            ax.imshow(img, extent=[x0, x1, y0, y1], aspect='auto')
+
+            self.update_plot()
 
     @staticmethod
     def save_project_file():
@@ -158,7 +197,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if created:
             fig = Figure()
             ax = fig.add_subplot(111)
-            ax.plot(np.random.rand(5))
+            self.line, = ax.plot(np.random.rand(5))
 
             self.add_plot(fig, fig_name)
 
@@ -175,19 +214,32 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.current_figure = fig
         self.figures[fig_name] = fig
         self.figures_list.addItem(fig_name)
+
         self.update_plot()
 
-    def update_plot(self, ):
-        if self.canvas:
-            self.remove_plot()
+    def update_plot(self):
+        self.remove_plot()
+
+        xs, ys = self.line.get_data()
+        self.points.setColumnWidth(0, 90)
+        self.points.setColumnWidth(1, 90)
+
+        for i in range(xs.size):
+            self.points.insertRow(i)
+            self.points.setItem(i, 0, QtWidgets.QTableWidgetItem(str(xs[i])))
+            self.points.setItem(i, 1, QtWidgets.QTableWidgetItem(str(ys[i])))
 
         self.canvas = FigureCanvas(self.current_figure)
         self.draw_layout.addWidget(self.canvas)
         self.canvas.draw()
+        self.add_toolbar()
 
     def remove_plot(self):
-        self.draw_layout.removeWidget(self.canvas)
-        self.canvas.close()
+        if self.canvas:
+            self.draw_layout.removeWidget(self.canvas)
+            self.draw_layout.removeWidget(self.toolbar)
+            self.points.setRowCount(0)
+            self.canvas.close()
 
 
 if __name__ == "__main__":
