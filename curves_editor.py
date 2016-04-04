@@ -3,16 +3,16 @@ import os
 import sys
 
 import matplotlib as mp
-import numpy as np
-from custom_widgets import ParamDialog
+from curves import InterpolateCurve
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
 )
-from matplotlib.figure import Figure
 from PIL import Image
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUiType
+
+from custom_widgets import CurvePoints, CurvesData, CurvesList
 
 Ui_MainWindow, QMainWindow = loadUiType("designs/curves_editor_design.ui")
 TOOLITEMS = (
@@ -28,22 +28,36 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     Main class for curves editor
     """
 
-    figures = {}
+    curves = {}
     canvas = None
-    current_figure = None
+    curve = None
     lines = None
     toolbar = None
 
     def __init__(self):
         super(CurvesEditor, self).__init__()
-        self.setupUi(self)
+        self.setup_ui()
         self.custom_settings()
         self.bind_actions()
         self.show()
 
+    def setup_ui(self):
+        super(CurvesEditor, self).setupUi(self)
+
+        self.curves_list = CurvesList()
+        self.curves_data = CurvesData()
+        self.curve_points = CurvePoints()
+
+        self.curves_layout.addWidget(self.curves_list)
+        self.curves_layout.addWidget(self.curves_data)
+        self.curves_layout.addWidget(self.curve_points)
+
+    def __handle_editing(self):
+        self.curve.edit()
+
     def custom_settings(self):
-        self.points.setColumnWidth(0, 99)
-        self.points.setColumnWidth(1, 99)
+        self.curve_points.table.setColumnWidth(0, 90)
+        self.curve_points.table.setColumnWidth(1, 90)
 
     def bind_actions(self):
         """
@@ -58,7 +72,15 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.action_interpolate.triggered.connect(self.draw_interpolate_curve)
         self.action_bezier.triggered.connect(self.draw_bezier_curve)
 
-        self.figures_list.itemClicked.connect(self.change_fig)
+        self.curves_list.list.itemClicked.connect(self.change_fig)
+
+        self.curves_data.range_t.editingFinished.connect(self.__handle_editing)
+        self.curves_data.function_x.editingFinished.connect(
+            self.__handle_editing
+        )
+        self.curves_data.function_y.editingFinished.connect(
+            self.__handle_editing
+        )
 
     def add_toolbar(self):
         def _icon(name):
@@ -85,26 +107,28 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
     def change_fig(self, item):
         fig_name = item.text()
-        self.current_figure = self.figures[fig_name]
-        self.line = self.current_figure.axes[0].lines[0]
+        self.curve = self.curves[fig_name]
+        self.line = self.curve.figure.axes[0].lines[0]
         self.update_plot()
 
     def clear_all(self):
         """
         Clear all and create new file
         """
-        self.current_figure = None
-        self.figures = {}
+        self.curve = None
+        self.curves = {}
         self.remove_plot()
-        self.figures_list.clear()
+        self.curves_list.list.clear()
 
     def open_file(self):
         """
         Open file
         :return: filename
         """
-        filename, ext = QtWidgets.QFileDialog.getOpenFileName(self, 'Otwórz plik')
-
+        filename, ext = QtWidgets.QFileDialog.getOpenFileName(
+            self,
+            'Otwórz plik'
+        )
         return filename
 
     def open_project(self):
@@ -127,7 +151,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         if filename:
             img = Image.open(filename)
-            ax = self.current_figure.axes[0]
+            ax = self.curve.figure.axes[0]
 
             x0, x1 = ax.get_xlim()
             y0, y1 = ax.get_ylim()
@@ -191,37 +215,8 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         """
         Draw interpolate curve
         """
-        dialog = ParamDialog()
-        values = None
-
-        if dialog.exec_():
-            values = dialog.get_values()
-
-        if values:
-            fig = Figure()
-            ax = fig.add_subplot(111)
-            a = 4
-            t_min = values.get('range').get('min')
-            t_max = values.get('range').get('max')
-            t_interval = values.get('range').get('interval')
-            x = [
-                eval(values.get('function_x'))
-                for t in [
-                    float(i)
-                    for i in np.arange(t_min, t_max, t_interval)
-                ]
-            ]
-            y = [
-                eval(values.get('function_y'))
-                for t in [
-                    float(i)
-                    for i in np.arange(t_min, t_max, t_interval)
-                ]
-            ]
-            # self.line, = ax.plot(np.random.rand(5))
-            self.line, = ax.plot(x, y)
-
-            self.add_plot(fig, values.get('name'))
+        self.curve = InterpolateCurve(self)
+        self.curve.draw()
 
     def draw_bezier_curve(self):
         """
@@ -232,10 +227,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if created:
             pass
 
-    def add_plot(self, fig, fig_name):
-        self.current_figure = fig
-        self.figures[fig_name] = fig
-        self.figures_list.addItem(fig_name)
+    def add_plot(self, fig_data):
+        self.curves[fig_data.get('name')] = self.curve
+        item = self.curves_list.list.addItem(fig_data.get('name'))
+        self.curves_list.list.setCurrentItem(item)
 
         self.update_plot()
 
@@ -243,15 +238,21 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.remove_plot()
 
         xs, ys = self.line.get_data()
-        self.points.setColumnWidth(0, 90)
-        self.points.setColumnWidth(1, 90)
 
-        for i in range(xs.size):
-            self.points.insertRow(i)
-            self.points.setItem(i, 0, QtWidgets.QTableWidgetItem(str(xs[i])))
-            self.points.setItem(i, 1, QtWidgets.QTableWidgetItem(str(ys[i])))
+        for i in range(len(xs)):
+            self.curve_points.table.insertRow(i)
+            self.curve_points.table.setItem(
+                i, 0, QtWidgets.QTableWidgetItem(str(xs[i]))
+            )
+            self.curve_points.table.setItem(
+                i, 1, QtWidgets.QTableWidgetItem(str(ys[i]))
+            )
 
-        self.canvas = FigureCanvas(self.current_figure)
+        self.curves_data.range_t.insert(self.curve.data.get('range'))
+        self.curves_data.function_x.insert(self.curve.data.get('function_x'))
+        self.curves_data.function_y.insert(self.curve.data.get('function_y'))
+
+        self.canvas = FigureCanvas(self.curve.figure)
         self.draw_layout.addWidget(self.canvas)
         self.canvas.draw()
         self.add_toolbar()
@@ -260,7 +261,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if self.canvas:
             self.draw_layout.removeWidget(self.canvas)
             self.draw_layout.removeWidget(self.toolbar)
-            self.points.setRowCount(0)
+            self.curve_points.table.setRowCount(0)
+            self.curves_data.range_t.clear()
+            self.curves_data.function_x.clear()
+            self.curves_data.function_y.clear()
             self.canvas.close()
 
 

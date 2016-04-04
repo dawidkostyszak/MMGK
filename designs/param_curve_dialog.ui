@@ -62,7 +62,7 @@
     <item row="1" column="0">
      <widget class="QLabel" name="label_5">
       <property name="text">
-       <string>Zakres t:</string>
+       <string>Przedział t:</string>
       </property>
      </widget>
     </item>

@@ -15,43 +15,19 @@
   </property>
   <widget class="QWidget" name="central_view">
    <layout class="QGridLayout" name="gridLayout">
-    <item row="2" column="1">
-     <widget class="QLabel" name="curves_label">
-      <property name="text">
-       <string>Punkty:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="1">
-     <widget class="QListWidget" name="figures_list">
+    <item row="0" column="0" rowspan="5">
+     <widget class="QWidget" name="draw_view" native="true">
       <property name="sizePolicy">
-       <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
+       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
         <horstretch>0</horstretch>
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
-      <property name="minimumSize">
-       <size>
-        <width>200</width>
-        <height>0</height>
-       </size>
-      </property>
-      <property name="maximumSize">
-       <size>
-        <width>200</width>
-        <height>150</height>
-       </size>
-      </property>
+      <layout class="QVBoxLayout" name="draw_layout"/>
      </widget>
     </item>
-    <item row="3" column="1">
-     <widget class="QTableWidget" name="points">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
+    <item row="0" column="1" rowspan="5">
+     <widget class="QWidget" name="curves_view" native="true">
       <property name="minimumSize">
        <size>
         <width>200</width>
@@ -64,39 +40,7 @@
         <height>16777215</height>
        </size>
       </property>
-      <column>
-       <property name="text">
-        <string>x</string>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>11</pointsize>
-        </font>
-       </property>
-      </column>
-      <column>
-       <property name="text">
-        <string>y</string>
-       </property>
-      </column>
-     </widget>
-    </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="point_label">
-      <property name="text">
-       <string>Krzywe:</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="0" rowspan="4">
-     <widget class="QWidget" name="draw_view" native="true">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <layout class="QVBoxLayout" name="draw_layout"/>
+      <layout class="QGridLayout" name="curves_layout"/>
      </widget>
     </item>
    </layout>
