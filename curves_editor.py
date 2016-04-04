@@ -4,6 +4,7 @@ import sys
 
 import matplotlib as mp
 import numpy as np
+from custom_widgets import ParamDialog
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
@@ -13,7 +14,7 @@ from PIL import Image
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.uic import loadUiType
 
-Ui_MainWindow, QMainWindow = loadUiType("curves_editor_design.ui")
+Ui_MainWindow, QMainWindow = loadUiType("designs/curves_editor_design.ui")
 TOOLITEMS = (
     ('Przesuń', 'PPM - przesuń skalę, LPM - przybliż/oddal skalę', 'move', 'pan'),
     ('Zoom', 'Przybliż krzywą', 'zoom_to_rect', 'zoom'),
@@ -190,16 +191,37 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         """
         Draw interpolate curve
         """
-        fig_name, created = self.get_fig_name(
-            'Parametryczna krzywa interpolacyjna'
-        )
+        dialog = ParamDialog()
+        values = None
 
-        if created:
+        if dialog.exec_():
+            values = dialog.get_values()
+
+        if values:
             fig = Figure()
             ax = fig.add_subplot(111)
-            self.line, = ax.plot(np.random.rand(5))
+            a = 4
+            t_min = values.get('range').get('min')
+            t_max = values.get('range').get('max')
+            t_interval = values.get('range').get('interval')
+            x = [
+                eval(values.get('function_x'))
+                for t in [
+                    float(i)
+                    for i in np.arange(t_min, t_max, t_interval)
+                ]
+            ]
+            y = [
+                eval(values.get('function_y'))
+                for t in [
+                    float(i)
+                    for i in np.arange(t_min, t_max, t_interval)
+                ]
+            ]
+            # self.line, = ax.plot(np.random.rand(5))
+            self.line, = ax.plot(x, y)
 
-            self.add_plot(fig, fig_name)
+            self.add_plot(fig, values.get('name'))
 
     def draw_bezier_curve(self):
         """
