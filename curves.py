@@ -1,13 +1,15 @@
 from matplotlib.figure import Figure
 import numpy as np
 
-from custom_widgets import ParamDialog
+from custom_widgets import ParamDialog, TranslateDialog, RotateDialog
 from utils import Utils
 
 
 class Curve(object):
     figure = None
     data = {}
+    translation = [0, 0]
+    rotation = 0
 
     def __init__(self, ui):
         self.ui = ui
@@ -15,8 +17,40 @@ class Curve(object):
     def edit(self):
         pass
 
+    def create(self):
+        pass
 
-class InterpolateCurve(Curve):
+    def get_plot_functions(self, data):
+        pass
+
+    def translate(self):
+        dialog = TranslateDialog()
+
+        if dialog.exec_():
+            data = dialog.get_data()
+
+            self.translation[0] += data.get('x')
+            self.translation[1] += data.get('y')
+
+            line = self.figure.axes[0].lines[0]
+            line.set_data(self.get_plot_functions(self.data))
+            self.ui.update_plot()
+
+    def rotate(self):
+        dialog = RotateDialog()
+
+        if dialog.exec_():
+            data = dialog.get_data()
+
+            self.rotation += data
+            self.rotation /= 360
+
+            line = self.figure.axes[0].lines[0]
+            line.set_data(self.get_plot_functions(self.data))
+            self.ui.update_plot()
+
+
+class ParametricCurve(Curve):
     def draw(self):
         dialog = ParamDialog()
         data = None
@@ -31,8 +65,7 @@ class InterpolateCurve(Curve):
             self.create(data)
             self.ui.add_plot(data)
 
-    @staticmethod
-    def get_plot_functions(data):
+    def get_plot_functions(self, data):
         range_t = Utils.parse_range(data.get('range'))
 
         t_min = range_t.get('min')
@@ -42,20 +75,19 @@ class InterpolateCurve(Curve):
         function_x = Utils.parse_curve_function(data.get('function_x'))
         function_y = Utils.parse_curve_function(data.get('function_y'))
 
-        x = [
-            eval(function_x) for t in [
-                float(i)
-                for i in np.arange(t_min, t_max, t_interval)
-            ]
-        ]
-        y = [
-            eval(function_y) for t in [
-                float(i)
-                for i in np.arange(t_min, t_max, t_interval)
-            ]
-        ]
+        xs = []
+        ys = []
+        for i in np.arange(t_min, t_max, t_interval):
+            t = float(i)
+            x = eval(function_x) + self.translation[0]
+            y = eval(function_y) + self.translation[1]
+            rot_x = x * np.cos(self.rotation) - y * np.sin(self.rotation)
+            rot_y = x * np.sin(self.rotation) + y * np.cos(self.rotation)
 
-        return x, y
+            xs.append(rot_x)
+            ys.append(y)
+
+        return xs, ys
 
     def create(self, data):
         fig = Figure()

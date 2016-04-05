@@ -3,7 +3,7 @@ import os
 import sys
 
 import matplotlib as mp
-from curves import InterpolateCurve
+from curves import ParametricCurve
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
@@ -52,9 +52,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_layout.addWidget(self.curves_data)
         self.curves_layout.addWidget(self.curve_points)
 
-    def __handle_editing(self):
-        self.curve.edit()
-
     def custom_settings(self):
         self.curve_points.table.setColumnWidth(0, 90)
         self.curve_points.table.setColumnWidth(1, 90)
@@ -69,8 +66,11 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.action_save_as.triggered.connect(self.save_file)
         self.action_exit.triggered.connect(QtCore.QCoreApplication.quit)
 
+        self.action_parametric.triggered.connect(self.draw_parametric_curve)
         self.action_interpolate.triggered.connect(self.draw_interpolate_curve)
         self.action_bezier.triggered.connect(self.draw_bezier_curve)
+        self.action_translate.triggered.connect(self.__translate_curve)
+        self.action_rotate.triggered.connect(self.__rotate_curve)
 
         self.curves_list.list.itemClicked.connect(self.change_fig)
 
@@ -81,6 +81,15 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_data.function_y.editingFinished.connect(
             self.__handle_editing
         )
+
+    def __handle_editing(self):
+        self.curve.edit()
+
+    def __translate_curve(self):
+        self.curve.translate()
+
+    def __rotate_curve(self):
+        self.curve.rotate()
 
     def add_toolbar(self):
         def _icon(name):
@@ -215,7 +224,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         """
         Draw interpolate curve
         """
-        self.curve = InterpolateCurve(self)
+        pass
+
+    def draw_parametric_curve(self):
+        self.curve = ParametricCurve(self)
         self.curve.draw()
 
     def draw_bezier_curve(self):

@@ -2,6 +2,8 @@ from PyQt5 import QtCore, QtWidgets
 from PyQt5.uic import loadUiType
 
 UI_ParamDialog, _ = loadUiType("designs/param_curve_dialog.ui")
+UI_TranslateDialog, _ = loadUiType("designs/translate_curve_dialog.ui")
+UI_RotateDialog, _ = loadUiType("designs/rotate_curve_dialog.ui")
 UI_CurvePoints, _ = loadUiType("designs/curve_points.ui")
 UI_CurvesData, _ = loadUiType("designs/curves_data.ui")
 UI_CurvesList, _ = loadUiType("designs/curves_list.ui")
@@ -30,6 +32,29 @@ class CurvePoints(QtWidgets.QWidget, UI_CurvePoints):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.setupUi(self)
+
+
+class TranslateDialog(QtWidgets.QDialog, UI_TranslateDialog):
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setupUi(self)
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+    def get_data(self):
+        return {
+            'x': self.translate_x.value(),
+            'y': self.translate_y.value()
+        }
+
+
+class RotateDialog(QtWidgets.QDialog, UI_RotateDialog):
+    def __init__(self, parent=None):
+        QtWidgets.QDialog.__init__(self, parent)
+        self.setupUi(self)
+        self.setWindowModality(QtCore.Qt.ApplicationModal)
+
+    def get_data(self):
+        return self.angle.value()
 
 
 class ParamDialog(QtWidgets.QDialog, UI_ParamDialog):

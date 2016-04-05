@@ -74,10 +74,14 @@
      <property name="title">
       <string>Dodaj krzywą</string>
      </property>
+     <addaction name="action_parametric"/>
      <addaction name="action_interpolate"/>
      <addaction name="action_bezier"/>
     </widget>
     <addaction name="menu_add_curve"/>
+    <addaction name="separator"/>
+    <addaction name="action_translate"/>
+    <addaction name="action_rotate"/>
    </widget>
    <addaction name="file"/>
    <addaction name="edit"/>
@@ -135,6 +139,21 @@
   <action name="action_bezier">
    <property name="text">
     <string>Beziera</string>
+   </property>
+  </action>
+  <action name="action_parametric">
+   <property name="text">
+    <string>Parametryczną</string>
+   </property>
+  </action>
+  <action name="action_translate">
+   <property name="text">
+    <string>Translacja krzywej</string>
+   </property>
+  </action>
+  <action name="action_rotate">
+   <property name="text">
+    <string>Obrót krzywej</string>
    </property>
   </action>
  </widget>
