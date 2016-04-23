@@ -72,7 +72,7 @@
     </property>
     <widget class="QMenu" name="menu_add_curve">
      <property name="title">
-      <string>Dodaj krzywą</string>
+      <string>Rysuj krzywą</string>
      </property>
      <addaction name="action_parametric"/>
      <addaction name="action_interpolate"/>
