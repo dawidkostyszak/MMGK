@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from matplotlib.backends.backend_qt5agg import (
     FigureCanvasQTAgg as FigureCanvas
 )
@@ -15,7 +17,6 @@ class CustomFigure(Figure):
     def create(self, name):
         ax = self.add_subplot(111)
         ax.set_title(name)
-        self.ui.figures_list.list.addItem(name)
         self.draw_figure()
 
     def draw_figure(self):

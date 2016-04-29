@@ -1,5 +1,9 @@
+# -*- coding: utf-8 -*-
+
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.uic import loadUiType
+import utils
+import consts
 
 UI_ParamDialog, _ = loadUiType("designs/param_curve_dialog.ui")
 UI_InterpolateDialog, _ = loadUiType("designs/interpolate_curve_dialog.ui")
@@ -39,6 +43,22 @@ class RotateDialog(DialogMixin, UI_RotateDialog):
 
 
 class ParamDialog(DialogMixin, UI_ParamDialog):
+    def __init__(self):
+        super(ParamDialog, self).__init__()
+        self.name.setPlaceholderText('Przykładowa nazwa')
+
+        self.range_t.setPlaceholderText('-10,10,0.01')
+        self.range_icon.setPixmap(utils.get_pixmap('info.png'))
+        self.range_icon.setToolTip(consts.RANGE_INFO)
+
+        self.function_x.setPlaceholderText('t')
+        self.function_x_icon.setPixmap(utils.get_pixmap('info.png'))
+        self.function_x_icon.setToolTip(consts.SUPPORTED_FUNCTIONS)
+
+        self.function_y.setPlaceholderText('t^2')
+        self.function_y_icon.setPixmap(utils.get_pixmap('info.png'))
+        self.function_y_icon.setToolTip(consts.SUPPORTED_FUNCTIONS)
+
     def get_data(self):
         return {
             'name': self.name.text(),

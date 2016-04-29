@@ -1,9 +1,11 @@
+# -*- coding: utf-8 -*-
+
 import numpy as np
 
 from dialogs import (
     ParamDialog, TranslateDialog, RotateDialog, InterpolateDialog
 )
-from utils import Utils
+import utils
 
 
 class Curve(object):
@@ -68,8 +70,11 @@ class ParametricCurve(Curve):
             try:
                 x, y = self.get_plot_functions()
                 self.line, = ax.plot(x, y)
+                return True
             except:
-                pass
+                return False
+
+        return False
 
     def edit(self):
         is_modified = (
@@ -83,21 +88,21 @@ class ParametricCurve(Curve):
             if data != self.data:
                 self.data = data
                 self.line.set_data(self.get_plot_functions())
-                self.ui.update_plot(self)
+                self.ui.update_plot()
 
         self.ui.curves_data.range_t.setModified(False)
         self.ui.curves_data.function_x.setModified(False)
         self.ui.curves_data.function_y.setModified(False)
 
     def get_plot_functions(self):
-        range_t = Utils.parse_range(self.data.get('range'))
+        range_t = utils.parse_range(self.data.get('range'))
 
         t_min = range_t.get('min')
         t_max = range_t.get('max')
         t_interval = range_t.get('interval')
 
-        function_x = Utils.parse_curve_function(self.data.get('function_x'))
-        function_y = Utils.parse_curve_function(self.data.get('function_y'))
+        function_x = utils.parse_curve_function(self.data.get('function_x'))
+        function_y = utils.parse_curve_function(self.data.get('function_y'))
 
         xs = []
         ys = []
