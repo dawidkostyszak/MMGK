@@ -28,6 +28,12 @@
     </item>
     <item row="0" column="1" rowspan="5">
      <widget class="QWidget" name="curves_view" native="true">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="minimumSize">
        <size>
         <width>200</width>
@@ -36,11 +42,18 @@
       </property>
       <property name="maximumSize">
        <size>
-        <width>200</width>
+        <width>16777215</width>
         <height>16777215</height>
        </size>
       </property>
-      <layout class="QGridLayout" name="curves_layout"/>
+      <layout class="QGridLayout" name="curves_layout">
+       <property name="margin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
+       </property>
+      </layout>
      </widget>
     </item>
    </layout>
