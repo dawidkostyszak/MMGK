@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import os
+import sys
+
+import numpy as np
 from PyQt5 import QtCore, QtGui
 
 
 def parse_curve_function(func):
     pars_list = [
         ('^', '**'), ('sin', 'np.sin'), ('cos', 'np.cos'), ('tg', 'np.tg'),
-        ('ctg', 'np.ctg'), ('sqrt', 'np.sqrt')
+        ('ctg', 'np.ctg'), ('sqrt', 'np.sqrt'),
+        ('e', str(sys.float_info.epsilon))
     ]
     if func:
         for i, j in pars_list:

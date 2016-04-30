@@ -2,10 +2,10 @@
 
 import numpy as np
 
-from dialogs import (
-    ParamDialog, TranslateDialog, RotateDialog, InterpolateDialog
-)
 import utils
+from dialogs import (
+    InterpolateDialog, ParamDialog, RotateDialog, TranslateDialog
+)
 
 
 class Curve(object):

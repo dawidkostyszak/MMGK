@@ -1,7 +1,8 @@
 from PyQt5 import QtWidgets
 from PyQt5.uic import loadUiType
-import utils
+
 import consts
+import utils
 
 UI_CurvePoints, _ = loadUiType("designs/curve_points.ui")
 UI_CurvesData, _ = loadUiType("designs/curves_data.ui")

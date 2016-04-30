@@ -22,5 +22,6 @@ SUPPORTED_FUNCTIONS = (
     '<li>tanges -> tg</li>'
     '<li>cotanges -> ctg</li>'
     '<li>pierwiastek -> sqrt</li>'
+    '<li>epsilon -> e</li>'
     '</ul>'
 )
