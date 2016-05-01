@@ -51,12 +51,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         self.figures_list = widgets.FiguresList()
         self.curves_list = widgets.CurvesList()
-        self.curves_data = widgets.CurvesData()
+        self.edit_curve_data = widgets.EditCurveData()
         self.curve_points = widgets.CurvePoints()
 
         self.curves_layout.addWidget(self.figures_list)
         self.curves_layout.addWidget(self.curves_list)
-        self.curves_layout.addWidget(self.curves_data)
+        self.curves_layout.addWidget(self.edit_curve_data)
         self.curves_layout.addWidget(self.curve_points)
 
         self.edit.menuAction().setVisible(False)
@@ -90,13 +90,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         # Actions on lists
         self.figures_list.list.itemClicked.connect(self.__change_figure)
         self.curves_list.list.itemClicked.connect(self.__change_curve)
-
-        # Actions on inputs
-        self.curves_data.range_t.editingFinished.connect(self.__handle_editing)
-        self.curves_data.function_x.editingFinished.connect(
-            self.__handle_editing
-        )
-        self.curves_data.function_y.editingFinished.connect(
+        self.edit_curve_data.change_curve_data.clicked.connect(
             self.__handle_editing
         )
 
@@ -163,9 +157,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
     def __clear_curve_data(self):
         self.curve_points.table.setRowCount(0)
-        self.curves_data.range_t.clear()
-        self.curves_data.function_x.clear()
-        self.curves_data.function_y.clear()
 
     def __add_figure(self):
         """
@@ -327,16 +318,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             self.curve_points.table.setItem(
                 i, 1, QtWidgets.QTableWidgetItem(str(ys[i]))
             )
-
-        self.curves_data.range_t.insert(
-            self.active_curve.data.get('range')
-        )
-        self.curves_data.function_x.insert(
-            self.active_curve.data.get('function_x')
-        )
-        self.curves_data.function_y.insert(
-            self.active_curve.data.get('function_y')
-        )
 
         self.canvas.draw()
 

@@ -68,14 +68,21 @@ class ParamDialog(DialogMixin, UI_ParamDialog):
             'function_y': self.function_y.text(),
         }
 
+    def fill_data(self, data):
+        self.name.setReadOnly(True)
+        self.name.insert(data.get('name'))
+        self.range_t.insert(data.get('range'))
+        self.function_x.insert(data.get('function_x'))
+        self.function_y.insert(data.get('function_y'))
+
     def validate(self):
         if not self.name.text():
             return False
-        if not self.range_t.text():
+        elif not self.range_t.text():
             return False
-        if not self.function_x.text():
+        elif not self.function_x.text():
             return False
-        if not self.function_y.text():
+        elif not self.function_y.text():
             return False
         return True
 
@@ -84,5 +91,16 @@ class InterpolateDialog(DialogMixin, UI_InterpolateDialog):
     def get_data(self):
         return {
             'name': self.name.text(),
-            'points': self.points.text()
+            'function': self.function.text()
         }
+
+    def fill_data(self, data):
+        self.name.insert(data.get('name'))
+        self.function.insert(data.get('function'))
+
+    def validate(self):
+        if not self.name.text():
+            return False
+        elif not self.function.text():
+            return False
+        return True

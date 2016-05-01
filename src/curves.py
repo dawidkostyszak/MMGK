@@ -3,67 +3,25 @@
 import numpy as np
 
 import utils
-from dialogs import (
-    InterpolateDialog, ParamDialog, RotateDialog, TranslateDialog
-)
+import dialogs
 
 
 class Curve(object):
-    data = {}
-    translation = [0, 0]
-    rotation = 0
+    dialog_class = None
 
     def __init__(self, ui):
         self.ui = ui
         self.name = None
         self.line = None
-
-    def edit(self):
-        pass
+        self.data = {}
+        self.translation = [0, 0]
+        self.rotation = 0
 
     def create(self):
-        pass
-
-    def get_plot_functions(self):
-        pass
-
-    def translate(self):
-        dialog = TranslateDialog()
-
-        if dialog.exec_():
-            data = dialog.get_data()
-
-            self.translation[0] += data.get('x')
-            self.translation[1] += data.get('y')
-
-            self.line.set_data(self.get_plot_functions())
-            self.ui.update_plot()
-
-    def rotate(self):
-        dialog = RotateDialog()
-
-        if dialog.exec_():
-            data = dialog.get_data()
-
-            self.rotation += data
-            self.rotation /= 360
-
-            self.line.set_data(self.get_plot_functions())
-            self.ui.update_plot()
-
-
-class ParametricCurve(Curve):
-    def create(self):
-        dialog = ParamDialog()
-
-        if dialog.exec_():
-            data = dialog.get_data()
-
-        if dialog.validate():
+        is_valid, data = self.draw_curve_dialog(False)
+        if is_valid:
             self.name = data.get('name')
-            data.pop('name')
             self.data = data
-
             fig = self.ui.figure
             ax = fig.add_subplot(111)
 
@@ -77,22 +35,59 @@ class ParametricCurve(Curve):
         return False
 
     def edit(self):
-        is_modified = (
-            self.ui.curves_data.range_t.isModified() or
-            self.ui.curves_data.function_x.isModified() or
-            self.ui.curves_data.function_y.isModified()
-        )
+        is_valid, data = self.draw_curve_dialog(True)
 
-        if is_modified:
-            data = self.ui.curves_data.get_data()
+        if is_valid:
             if data != self.data:
+                self.name = data.get('name')
                 self.data = data
                 self.line.set_data(self.get_plot_functions())
                 self.ui.update_plot()
 
-        self.ui.curves_data.range_t.setModified(False)
-        self.ui.curves_data.function_x.setModified(False)
-        self.ui.curves_data.function_y.setModified(False)
+    def get_plot_functions(self):
+        pass
+
+    def translate(self):
+        dialog = dialogs.TranslateDialog()
+
+        if dialog.exec_():
+            data = dialog.get_data()
+
+            self.translation[0] += data.get('x')
+            self.translation[1] += data.get('y')
+
+            self.line.set_data(self.get_plot_functions())
+            self.ui.update_plot()
+
+    def rotate(self):
+        dialog = dialogs.RotateDialog()
+
+        if dialog.exec_():
+            data = dialog.get_data()
+
+            self.rotation += data
+            self.rotation /= 360
+
+            self.line.set_data(self.get_plot_functions())
+            self.ui.update_plot()
+
+    def draw_curve_dialog(self, edit):
+        dialog = self.dialog_class()
+
+        if edit:
+            dialog.fill_data(self.data)
+
+        if dialog.exec_():
+            data = dialog.get_data()
+
+            if dialog.validate():
+                return True, data
+
+        return False, {}
+
+
+class ParametricCurve(Curve):
+    dialog_class = dialogs.ParamDialog
 
     def get_plot_functions(self):
         range_t = utils.parse_range(self.data.get('range'))
@@ -119,44 +114,10 @@ class ParametricCurve(Curve):
 
 
 class InterpolateCurve(Curve):
-    def draw(self):
-        dialog = InterpolateDialog()
+    dialog_class = dialogs.InterpolateDialog
 
-        if dialog.exec_():
-            name, points = dialog.get_data()
-            points = [(0, 0), (25, 30), (50, 10), (57, 0)]
-            P = self.lagrange(points)
-
-            data = {
-                'name': name,
-                'points': points,
-                'f': P
-            }
-
-            self.data = points
-            self.create(data)
-            self.ui.add_plot(data)
-
-    def create(self):
-        fig = Figure()
-        self.figure = fig
-        ax = fig.add_subplot(111)
-
-        f = data.get('f')
-        name = data.get('name')
-        points = data.get('points')
-        x = range(-10, 100)
-        y = map(f, x)
-
-        self.ui.line, = ax.plot(x, y)
-
-        # x_list = []
-        # y_list = []
-        # for x, y in points:
-        #     x_list.append(x)
-        #     y_list.append(y)
-        #
-        # ax2.plot(x_list, y_list, 'ro')
+    def get_plot_functions(self):
+        return self.newton()
 
     @staticmethod
     def lagrange(points):
@@ -181,6 +142,11 @@ class InterpolateCurve(Curve):
                 total += yi * g(i, n)
             return total
         return P
+
+    def newton(self):
+        points = self.data.get('points')
+
+        return [], []
 
 
 class BezierCurve(Curve):
