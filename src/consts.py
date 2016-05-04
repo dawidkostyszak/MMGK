@@ -25,3 +25,13 @@ SUPPORTED_FUNCTIONS = (
     '<li>epsilon -> e</li>'
     '</ul>'
 )
+
+TOOLITEMS = (
+    ('Przesuń', 'PPM - przesuń skalę, LPM - przybliż/oddal skalę', 'move', 'pan'),
+    ('Zoom', 'Przybliż krzywą', 'zoom_to_rect', 'zoom'),
+    (None, None, None, None),
+    ('Krzywa', 'Konfiguruj krzywą', 'subplots', 'configure_subplots'),
+)
+EXTENDED_TOOLITEMS = (
+    ('Tło', 'Dodaj tło', 'background.png', 'configure_background'),
+)

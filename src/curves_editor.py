@@ -4,26 +4,20 @@ import os
 import sys
 
 import matplotlib as mp
-from matplotlib.backends.backend_qt5agg import (
-    NavigationToolbar2QT as NavigationToolbar
-)
-from PIL import Image
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.uic import loadUiType
 
 import curves
 import dialogs
-import utils
 import widgets
 from figure import CustomFigure
 
 Ui_MainWindow, QMainWindow = loadUiType("designs/curves_editor_design.ui")
-TOOLITEMS = (
-    ('Przesuń', 'PPM - przesuń skalę, LPM - przybliż/oddal skalę', 'move', 'pan'),
-    ('Zoom', 'Przybliż krzywą', 'zoom_to_rect', 'zoom'),
-    (None, None, None, None),
-    ('Krzywa', 'Konfiguruj krzywą', 'subplots', 'configure_subplots'),
-)
+
+BUTTONS = {
+    'LPM': 1,
+    'PPM': 3,
+}
 
 
 class CurvesEditor(QMainWindow, Ui_MainWindow):
@@ -35,12 +29,16 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     figures = {}
 
     active_curve = None
-
-    canvas = None
-    toolbar = None
+    active_point = {
+        'id': None,
+        'press': False
+    }
 
     def __init__(self):
         super(CurvesEditor, self).__init__()
+        self.point_binded = False
+        self.canvas = None
+        self.toolbar = None
         self.setup_ui()
         self.custom_settings()
         self.bind_actions()
@@ -94,32 +92,88 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             self.__handle_editing
         )
 
+    def unbind_point_actions(self):
+        param_curve = isinstance(self.active_curve, curves.ParametricCurve)
+        if param_curve or not self.point_binded:
+            return
+
+        self.canvas.mpl_disconnect(self.cid_press)
+        self.canvas.mpl_disconnect(self.cid_release)
+        self.canvas.mpl_disconnect(self.cid_pick)
+        self.canvas.mpl_disconnect(self.cid_motion)
+        self.point_binded = False
+
+    def bind_point_actions(self):
+        param_curve = isinstance(self.active_curve, curves.ParametricCurve)
+        if param_curve or self.point_binded:
+            return
+
+        self.cid_press = self.canvas.mpl_connect(
+            'button_press_event',
+            self.__add_point
+        )
+        self.cid_release = self.canvas.mpl_connect(
+            'button_release_event',
+            self.__on_release
+        )
+        self.cid_pick = self.canvas.mpl_connect(
+            'pick_event',
+            self.__pick_point
+        )
+        self.cid_motion = self.canvas.mpl_connect(
+            'motion_notify_event',
+            self.__move_point
+        )
+        self.point_binded = True
+
+    def __add_point(self, event):
+        if event.button != BUTTONS.get('LPM') or not self.active_curve:
+            return
+
+        index = self.active_point['id']
+        if index is not None:
+            index += 1
+
+        self.active_curve.add_point(event, index)
+
+    def __pick_point(self, event):
+        if event.artist != self.active_curve.help_line:
+            return
+
+        self.active_point['press'] = True
+        self.active_point['id'] = event.ind[0]
+
+    def __move_point(self, event):
+        is_ppm = event.button == BUTTONS.get('PPM')
+        if not (self.active_point['press'] and is_ppm):
+            return
+
+        self.active_curve.edit_point(event, self.active_point['id'])
+        self.canvas.draw()
+
+    def __on_release(self, event):
+        self.active_point['press'] = False
+        self.active_point['id'] = None
+        if self.active_curve:
+            self.update_plot()
+
     def __handle_editing(self):
         self.active_curve.edit()
 
     def __translate_curve(self):
+        if not self.active_curve:
+            return
         self.active_curve.translate()
 
     def __rotate_curve(self):
+        if not self.active_curve:
+            return
         self.active_curve.rotate()
 
     def add_toolbar(self):
-        NavigationToolbar.toolitems = TOOLITEMS
-        self.toolbar = NavigationToolbar(self.canvas, self.draw_view)
-        extended_toolitems = (
-            ('Tło', 'Dodaj tło', 'background.png', 'configure_background'),
+        self.toolbar = widgets.CustomNavigationToolbar(
+            self, self.canvas, self.draw_view
         )
-
-        for text, tooltip_text, image_file, callback in extended_toolitems:
-            a = self.toolbar.addAction(
-                utils.get_icon(image_file),
-                text,
-                getattr(self, callback)
-            )
-
-            if tooltip_text is not None:
-                a.setToolTip(tooltip_text)
-
         self.draw_layout.addWidget(self.toolbar)
 
     def __add_curve(self, curve):
@@ -127,7 +181,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Add new curve to curves list and update draw
         :param curve
         """
+        created = curve.create()
+        if not created:
+            return
+
         if self.active_curve:
+            self.unbind_point_actions()
             mp.artist.setp(self.active_curve.line, linewidth=1)
 
         self.active_curve = curve
@@ -144,16 +203,21 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         self.update_plot()
 
+        self.bind_point_actions()
+
     def __change_curve(self, item):
         """
         Update curve
         :param item:
         """
+        self.unbind_point_actions()
         name = item.text()
         mp.artist.setp(self.active_curve.line, linewidth=1)
         self.active_curve = self.figure.curves[name]
         mp.artist.setp(self.active_curve.line, linewidth=4)
         self.update_plot()
+
+        self.bind_point_actions()
 
     def __clear_curve_data(self):
         self.curve_points.table.setRowCount(0)
@@ -188,8 +252,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         name = item.text()
         self.__clear_figure_data()
         self.__clear_curve_data()
+
         self.figure = self.figures[name]
         self.figure.draw_figure()
+
         for curve_name in self.figure.curves.keys():
             self.curves_list.list.addItem(curve_name)
 
@@ -203,17 +269,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         name = item.text()
         del self.figures[name]
 
-    def __open_file(self):
-        """
-        Open file
-        :return: filename
-        """
-        filename, ext = QtWidgets.QFileDialog.getOpenFileName(
-            self,
-            'Otwórz plik'
-        )
-        return filename
-
     def __open_project(self):
         """
         Open file with project amd draw on screen
@@ -225,23 +280,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
             with f:
                 data = f.read()
-
-    def configure_background(self):
-        """
-        Open file with image and draw as background
-        """
-        filename = self.__open_file()
-
-        if filename:
-            img = Image.open(filename)
-            ax = self.figure.axes[0]
-
-            x0, x1 = ax.get_xlim()
-            y0, y1 = ax.get_ylim()
-            ax.imshow(img, extent=[x0, x1, y0, y1], aspect='auto')
-
-            self.canvas.draw()
-            # self.update_plot()
 
     @staticmethod
     def __save_project_file():
@@ -289,26 +327,22 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Draw interpolate curve
         """
         curve = curves.InterpolateCurve(self)
-        curve.create()
         self.__add_curve(curve)
 
     def __draw_parametric_curve(self):
         curve = curves.ParametricCurve(self)
-        created = curve.create()
-        if created:
-            self.__add_curve(curve)
+        self.__add_curve(curve)
 
     def __draw_bezier_curve(self):
         """
         Draw bezier curve
         """
         curve = curves.BezierCurve(self)
-        curve.create()
         self.__add_curve(curve)
 
     def update_plot(self):
         self.__clear_curve_data()
-        xs, ys = self.active_curve.line.get_data()
+        xs, ys = self.active_curve.help_line.get_data()
 
         for i in range(len(xs)):
             self.curve_points.table.insertRow(i)

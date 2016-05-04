@@ -13,7 +13,10 @@ class Curve(object):
         self.ui = ui
         self.name = None
         self.line = None
+        self.help_line = None
         self.data = {}
+        self.xp = []
+        self.yp = []
         self.translation = [0, 0]
         self.rotation = 0
 
@@ -27,7 +30,7 @@ class Curve(object):
 
             try:
                 x, y = self.get_plot_functions()
-                self.line, = ax.plot(x, y)
+                self.line, = ax.plot(x, y, label=self.name)
                 return True
             except:
                 return False
@@ -43,6 +46,10 @@ class Curve(object):
                 self.data = data
                 self.line.set_data(self.get_plot_functions())
                 self.ui.update_plot()
+                return True
+            return False
+
+        return False
 
     def get_plot_functions(self):
         pass
@@ -85,9 +92,40 @@ class Curve(object):
 
         return False, {}
 
+    def add_point(self, event, index=None):
+        if event.inaxes != self.help_line.axes:
+            return
+
+        if index is not None:
+            self.xp.insert(index, event.xdata)
+            self.yp.insert(index, event.ydata)
+        else:
+            self.xp.append(event.xdata)
+            self.yp.append(event.ydata)
+        self.help_line.set_data(self.xp, self.yp)
+
+    def edit_point(self, event, index):
+        self.xp[index] = event.xdata
+        self.yp[index] = event.ydata
+        self.help_line.set_data(self.xp, self.yp)
+
 
 class ParametricCurve(Curve):
     dialog_class = dialogs.ParamDialog
+
+    def create(self):
+        created = super(ParametricCurve, self).create()
+        if created:
+            self.help_line = self.line
+
+        return created
+
+    def edit(self):
+        edited = super(ParametricCurve, self).edit()
+        if edited:
+            self.help_line = self.line
+
+        return edited
 
     def get_plot_functions(self):
         range_t = utils.parse_range(self.data.get('range'))
@@ -115,6 +153,19 @@ class ParametricCurve(Curve):
 
 class InterpolateCurve(Curve):
     dialog_class = dialogs.InterpolateDialog
+
+    def create(self):
+        created = super(InterpolateCurve, self).create()
+
+        if created:
+            fig = self.ui.figure
+            ax = fig.add_subplot(111)
+            self.help_line, = ax.plot(
+                [], [], ls='--', c='#666666', marker='x', mew=2, mec='#204a87',
+                picker=5, label=self.name + ' help line'
+            )
+
+        return created
 
     def get_plot_functions(self):
         return self.newton()
