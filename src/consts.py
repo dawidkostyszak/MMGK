@@ -32,6 +32,12 @@ TOOLITEMS = (
     (None, None, None, None),
     ('Krzywa', 'Konfiguruj krzywą', 'subplots', 'configure_subplots'),
 )
+
 EXTENDED_TOOLITEMS = (
     ('Tło', 'Dodaj tło', 'background.png', 'configure_background'),
 )
+
+BUTTONS = {
+    'LPM': 1,
+    'PPM': 3,
+}

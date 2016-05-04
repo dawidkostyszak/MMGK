@@ -6,12 +6,12 @@ from PyQt5 import QtWidgets
 from PyQt5.uic import loadUiType
 
 import consts
+import dialogs
 import utils
 
 UI_CurvePoints, _ = loadUiType("designs/curve_points.ui")
 UI_EditCurveData, _ = loadUiType("designs/edit_curve_data.ui")
 UI_CurvesList, _ = loadUiType("designs/curves_list.ui")
-UI_FiguresList, _ = loadUiType("designs/figures_list.ui")
 
 
 class CustomNavigationToolbar(NavigationToolbar2QT):
@@ -36,22 +36,12 @@ class CustomNavigationToolbar(NavigationToolbar2QT):
             if tooltip_text is not None:
                 a.setToolTip(tooltip_text)
 
-    def __open_file(self):
-        """
-        Open file
-        :return: filename
-        """
-        filename, ext = QtWidgets.QFileDialog.getOpenFileName(
-            self.ui,
-            'Otwórz plik'
-        )
-        return filename
-
     def configure_background(self):
         """
         Open file with image and draw as background
         """
-        filename = self.__open_file()
+        dialog = dialogs.OpenFileDialog(self.ui)
+        filename = dialog.open_file()
 
         if filename:
             img = Image.open(filename)
@@ -75,10 +65,6 @@ class WidgetMixin(QtWidgets.QWidget):
     def __init__(self, parent=None):
         QtWidgets.QWidget.__init__(self, parent)
         self.setupUi(self)
-
-
-class FiguresList(WidgetMixin, UI_FiguresList):
-    pass
 
 
 class CurvesList(WidgetMixin, UI_CurvesList):

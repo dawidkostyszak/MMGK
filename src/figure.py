@@ -13,8 +13,10 @@ class CustomFigure(Figure):
     def __init__(self, ui, *args, **kwargs):
         super(CustomFigure, self).__init__(*args, **kwargs)
         self.ui = ui
+        self.name = ''
 
     def create(self, name):
+        self.name = name
         ax = self.add_subplot(111)
         ax.set_title(name)
         self.draw_figure()

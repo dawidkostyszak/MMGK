@@ -1,12 +1,15 @@
 # -*- coding: utf-8 -*-
 
+import json
 import os
+import matplotlib as mp
 import sys
 
-import matplotlib as mp
+from PIL import Image
 from PyQt5 import QtCore, QtWidgets
 from PyQt5.uic import loadUiType
 
+import consts
 import curves
 import dialogs
 import widgets
@@ -14,9 +17,11 @@ from figure import CustomFigure
 
 Ui_MainWindow, QMainWindow = loadUiType("designs/curves_editor_design.ui")
 
-BUTTONS = {
-    'LPM': 1,
-    'PPM': 3,
+
+CURVE_TYPES = {
+    'PARAM': curves.ParametricCurve,
+    'INTERPOLATE': curves.InterpolateCurve,
+    'BEZIER': curves.BezierCurve,
 }
 
 
@@ -26,7 +31,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     """
 
     figure = None
-    figures = {}
 
     active_curve = None
     active_point = {
@@ -47,12 +51,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def setup_ui(self):
         super(CurvesEditor, self).setupUi(self)
 
-        self.figures_list = widgets.FiguresList()
         self.curves_list = widgets.CurvesList()
         self.edit_curve_data = widgets.EditCurveData()
         self.curve_points = widgets.CurvePoints()
 
-        self.curves_layout.addWidget(self.figures_list)
         self.curves_layout.addWidget(self.curves_list)
         self.curves_layout.addWidget(self.edit_curve_data)
         self.curves_layout.addWidget(self.curve_points)
@@ -70,9 +72,9 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         """
 
         # Actions file
-        self.action_new.triggered.connect(self.__add_figure)
+        self.action_new.triggered.connect(self.__handle_add_figure)
         self.action_open.triggered.connect(self.__open_project)
-        self.action_save.triggered.connect(self.__save_project_file)
+        self.action_save.triggered.connect(self.__save_project)
         self.action_save_as.triggered.connect(self.__save_file)
         self.action_exit.triggered.connect(QtCore.QCoreApplication.quit)
 
@@ -86,13 +88,16 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.action_rotate.triggered.connect(self.__rotate_curve)
 
         # Actions on lists
-        self.figures_list.list.itemClicked.connect(self.__change_figure)
         self.curves_list.list.itemClicked.connect(self.__change_curve)
         self.edit_curve_data.change_curve_data.clicked.connect(
             self.__handle_editing
         )
 
     def unbind_point_actions(self):
+        """
+        Unbind actions from point.
+        ParametricCurve doesn't support dynamic points.
+        """
         param_curve = isinstance(self.active_curve, curves.ParametricCurve)
         if param_curve or not self.point_binded:
             return
@@ -104,6 +109,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.point_binded = False
 
     def bind_point_actions(self):
+        """
+        Bind actions from point.
+        ParametricCurve doesn't support dynamic points.
+        """
         param_curve = isinstance(self.active_curve, curves.ParametricCurve)
         if param_curve or self.point_binded:
             return
@@ -127,7 +136,11 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.point_binded = True
 
     def __add_point(self, event):
-        if event.button != BUTTONS.get('LPM') or not self.active_curve:
+        """
+        Action for adding point. Click LPM to add point.
+        :param event:
+        """
+        if event.button != consts.BUTTONS.get('LPM') or not self.active_curve:
             return
 
         index = self.active_point['id']
@@ -137,6 +150,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.active_curve.add_point(event, index)
 
     def __pick_point(self, event):
+        """
+        Action for picking point. Click PPM to pick point.
+        :param event:
+        """
         if event.artist != self.active_curve.help_line:
             return
 
@@ -144,7 +161,11 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.active_point['id'] = event.ind[0]
 
     def __move_point(self, event):
-        is_ppm = event.button == BUTTONS.get('PPM')
+        """
+        Action for moving point. Move mouse when click PPM on point.
+        :param event:
+        """
+        is_ppm = event.button == consts.BUTTONS.get('PPM')
         if not (self.active_point['press'] and is_ppm):
             return
 
@@ -152,6 +173,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.canvas.draw()
 
     def __on_release(self, event):
+        """
+        Clear states and update plot when action released.
+        :param event:
+        """
         self.active_point['press'] = False
         self.active_point['id'] = None
         if self.active_curve:
@@ -176,12 +201,21 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         )
         self.draw_layout.addWidget(self.toolbar)
 
-    def __add_curve(self, curve):
+    def __handle_add_curve(self, curve):
         """
-        Add new curve to curves list and update draw
+        Handle add curve action.
+        :param curve:
+        """
+        is_valid, data = curve.draw_curve_dialog(False)
+        if is_valid:
+            self.__add_curve(curve, data)
+
+    def __add_curve(self, curve, data):
+        """
+        Add new curve to curves list and update draw.
         :param curve
         """
-        created = curve.create()
+        created = curve.create(data)
         if not created:
             return
 
@@ -207,7 +241,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
     def __change_curve(self, item):
         """
-        Update curve
+        Update curve.
         :param item:
         """
         self.unbind_point_actions()
@@ -222,74 +256,124 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def __clear_curve_data(self):
         self.curve_points.table.setRowCount(0)
 
-    def __add_figure(self):
+    def __handle_add_figure(self):
         """
-        Create new figure and add to figures list and update draw
+        Handle add figure action.
         """
         dialog = dialogs.FigureDialog()
 
         if dialog.exec_():
             data = dialog.get_data()
             name = data.get('name')
+            if name:
+                self.__add_figure(name)
 
-            self.edit.menuAction().setVisible(True)
+    def __add_figure(self, name):
+        """
+        Create new figure and update draw
+        """
+        self.edit.menuAction().setVisible(True)
 
-            self.__clear_figure_data()
-            self.__clear_curve_data()
-
-            self.figure = CustomFigure(self)
-            self.figure.create(name)
-
-            self.figures[name] = self.figure
-            self.figures_list.list.addItem(name)
-            item = self.figures_list.list.findItems(
-                name,
-                QtCore.Qt.MatchFixedString
-            )[0]
-            self.figures_list.list.setCurrentItem(item)
-
-    def __change_figure(self, item):
-        name = item.text()
         self.__clear_figure_data()
         self.__clear_curve_data()
 
-        self.figure = self.figures[name]
-        self.figure.draw_figure()
-
-        for curve_name in self.figure.curves.keys():
-            self.curves_list.list.addItem(curve_name)
+        self.figure = CustomFigure(self)
+        self.figure.create(name)
 
     def __clear_figure_data(self):
         if self.figure:
             self.figure.clear()
             self.curves_list.list.clear()
 
-    def __remove_figure(self, item):
-        self.figure.clear()
-        name = item.text()
-        del self.figures[name]
-
     def __open_project(self):
         """
-        Open file with project amd draw on screen
+        Open file with project and draw on screen.
+        Data format:
+            {
+                name: 'xyz',
+                curves: [
+                    {
+                        data: {
+                            name: 'cur1',
+                            ...
+                        },
+                        type: 'PARAM',
+                    },
+                    {
+                        data: {
+                            name: 'cur2',
+                            ...
+                        },
+                        type: 'BEZIER',
+                    },
+                ]
+            }
         """
-        filename = self.open_file()
+        dialog = dialogs.OpenFileDialog(self)
+        filename = dialog.open_file()
 
         if filename:
-            f = open(filename, 'r')
+            with open(filename) as infile:
+                data = json.load(infile)
+                infile.close()
 
-            with f:
-                data = f.read()
+            f_name = data.get('name')
+            self.__add_figure(f_name)
 
-    @staticmethod
-    def __save_project_file():
+            for curve in reversed(data.get('curves')):
+                c_type = curve.get('type')
+                c_data = curve.get('data')
+
+                c = CURVE_TYPES[c_type](self)
+                self.__add_curve(c, c_data)
+
+    def __save_project(self):
         """
-        Save file as project with special extension
+        Save file as project.
+        Data format:
+            {
+                name: 'xyz',
+                curves: [
+                    {
+                        data: {
+                            name: 'cur1',
+                            ...
+                        },
+                        type: 'PARAM',
+                    },
+                    {
+                        data: {
+                            name: 'cur2',
+                            ...
+                        },
+                        type: 'BEZIER',
+                    },
+                ]
+            }
         """
-        file_name = 'test.txt'
-        f = open(file_name, 'w')
-        f.write('test')
-        f.close()
+        save_data = {
+            'name': self.figure.name,
+            'curves': [],
+        }
+        curves_list = []
+
+        for curve in self.figure.curves.values():
+            data = curve.data
+            if curve.xp:
+                data['x_data'] = curve.xp
+            if curve.yp:
+                data['y_data'] = curve.yp
+
+            curves_list.append({
+                'data': curve.data,
+                'type': curve.type,
+            })
+        save_data['curves'] = curves_list
+
+        file_name = 'test.json'
+        with open(file_name, 'w') as outfile:
+            json.dump(save_data, outfile)
+            outfile.close()
 
     def __save_file(self):
         """
@@ -324,23 +408,30 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
     def __draw_interpolate_curve(self):
         """
-        Draw interpolate curve
+        Draw interpolate curve.
         """
         curve = curves.InterpolateCurve(self)
-        self.__add_curve(curve)
+        self.__handle_add_curve(curve)
 
     def __draw_parametric_curve(self):
+        """
+        Draw parametric curve.
+        :return:
+        """
         curve = curves.ParametricCurve(self)
-        self.__add_curve(curve)
+        self.__handle_add_curve(curve)
 
     def __draw_bezier_curve(self):
         """
-        Draw bezier curve
+        Draw bezier curve.
         """
         curve = curves.BezierCurve(self)
-        self.__add_curve(curve)
+        self.__handle_add_curve(curve)
 
     def update_plot(self):
+        """
+        Update plot data.
+        """
         self.__clear_curve_data()
         xs, ys = self.active_curve.help_line.get_data()
 

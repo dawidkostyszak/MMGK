@@ -7,6 +7,7 @@ import dialogs
 
 
 class Curve(object):
+    type = None
     dialog_class = None
 
     def __init__(self, ui):
@@ -20,24 +21,29 @@ class Curve(object):
         self.translation = [0, 0]
         self.rotation = 0
 
-    def create(self):
-        is_valid, data = self.draw_curve_dialog(False)
-        if is_valid:
-            self.name = data.get('name')
-            self.data = data
-            fig = self.ui.figure
-            ax = fig.add_subplot(111)
+    def create(self, data):
+        """
+        Create curve.
+        :param data:
+        :return: created :type boolean
+        """
+        self.name = data.get('name')
+        self.data = data
+        fig = self.ui.figure
+        ax = fig.add_subplot(111)
 
-            try:
-                x, y = self.get_plot_functions()
-                self.line, = ax.plot(x, y, label=self.name)
-                return True
-            except:
-                return False
-
-        return False
+        try:
+            x, y = self.get_plot_functions()
+            self.line, = ax.plot(x, y, label=self.name)
+            return True
+        except:
+            return False
 
     def edit(self):
+        """
+        Update curve.
+        :return: edited :type boolean
+        """
         is_valid, data = self.draw_curve_dialog(True)
 
         if is_valid:
@@ -52,9 +58,16 @@ class Curve(object):
         return False
 
     def get_plot_functions(self):
+        """
+        Get lists of points.
+        :return: xp, yp :type list, list
+        """
         pass
 
     def translate(self):
+        """
+        Translate list of curve points.
+        """
         dialog = dialogs.TranslateDialog()
 
         if dialog.exec_():
@@ -62,11 +75,16 @@ class Curve(object):
 
             self.translation[0] += data.get('x')
             self.translation[1] += data.get('y')
+            self.xp = map(lambda x: x + data.get('x'), self.xp)
+            self.yp = map(lambda y: y + data.get('y'), self.yp)
 
             self.line.set_data(self.get_plot_functions())
             self.ui.update_plot()
 
     def rotate(self):
+        """
+        Rotate list of curve points.
+        """
         dialog = dialogs.RotateDialog()
 
         if dialog.exec_():
@@ -102,19 +120,20 @@ class Curve(object):
         else:
             self.xp.append(event.xdata)
             self.yp.append(event.ydata)
-        self.help_line.set_data(self.xp, self.yp)
+        self.line.set_data(self.get_plot_functions())
 
     def edit_point(self, event, index):
         self.xp[index] = event.xdata
         self.yp[index] = event.ydata
-        self.help_line.set_data(self.xp, self.yp)
+        self.line.set_data(self.get_plot_functions())
 
 
 class ParametricCurve(Curve):
+    type = 'PARAM'
     dialog_class = dialogs.ParamDialog
 
-    def create(self):
-        created = super(ParametricCurve, self).create()
+    def create(self, data):
+        created = super(ParametricCurve, self).create(data)
         if created:
             self.help_line = self.line
 
@@ -152,22 +171,25 @@ class ParametricCurve(Curve):
 
 
 class InterpolateCurve(Curve):
+    type = 'INTERPOLATE'
     dialog_class = dialogs.InterpolateDialog
 
-    def create(self):
-        created = super(InterpolateCurve, self).create()
-
-        if created:
-            fig = self.ui.figure
-            ax = fig.add_subplot(111)
-            self.help_line, = ax.plot(
-                [], [], ls='--', c='#666666', marker='x', mew=2, mec='#204a87',
-                picker=5, label=self.name + ' help line'
-            )
+    def create(self, data):
+        fig = self.ui.figure
+        ax = fig.add_subplot(111)
+        self.xp = data.get('x_data', [])
+        self.yp = data.get('y_data', [])
+        self.help_line, = ax.plot(
+            self.xp, self.yp, ls='--', c='#666666', marker='x', mew=2,
+            mec='#204a87', picker=5, label=data.get('name') + ' help line'
+        )
+        created = super(InterpolateCurve, self).create(data)
 
         return created
 
     def get_plot_functions(self):
+        self.help_line.set_data(self.xp, self.yp)
+
         return self.newton()
 
     @staticmethod
@@ -201,4 +223,5 @@ class InterpolateCurve(Curve):
 
 
 class BezierCurve(Curve):
+    type = 'BEZIER'
     pass
