@@ -7,7 +7,7 @@ import consts
 import utils
 
 UI_ParamDialog, _ = loadUiType("designs/param_curve_dialog.ui")
-UI_InterpolateDialog, _ = loadUiType("designs/interpolate_curve_dialog.ui")
+UI_NameCurveDialog, _ = loadUiType("designs/name_curve_dialog.ui")
 UI_TranslateDialog, _ = loadUiType("designs/translate_curve_dialog.ui")
 UI_RotateDialog, _ = loadUiType("designs/rotate_curve_dialog.ui")
 UI_FigureDialog, _ = loadUiType("designs/add_figure_dialog.ui")
@@ -87,21 +87,17 @@ class ParamDialog(DialogMixin, UI_ParamDialog):
         return True
 
 
-class InterpolateDialog(DialogMixin, UI_InterpolateDialog):
+class CurveNameDialog(DialogMixin, UI_NameCurveDialog):
     def get_data(self):
         return {
-            'name': self.name.text(),
-            'function': self.function.text()
+            'name': self.name.text()
         }
 
     def fill_data(self, data):
         self.name.insert(data.get('name'))
-        self.function.insert(data.get('function'))
 
     def validate(self):
         if not self.name.text():
-            return False
-        elif not self.function.text():
             return False
         return True
 

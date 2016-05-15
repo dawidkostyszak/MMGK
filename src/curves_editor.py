@@ -201,6 +201,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         )
         self.draw_layout.addWidget(self.toolbar)
 
+    def get_curve_item(self):
+        return self.curves_list.list.findItems(
+            self.active_curve.name,
+            QtCore.Qt.MatchFixedString
+        )[-1]
+
     def __handle_add_curve(self, curve):
         """
         Handle add curve action.
@@ -229,10 +235,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         mp.artist.setp(self.active_curve.line, linewidth=4)
 
         self.curves_list.list.addItem(self.active_curve.name)
-        item = self.curves_list.list.findItems(
-            self.active_curve.name,
-            QtCore.Qt.MatchFixedString
-        )[-1]
+        item = self.get_curve_item()
         self.curves_list.list.setCurrentItem(item)
 
         self.update_plot()

@@ -48,7 +48,11 @@ class Curve(object):
 
         if is_valid:
             if data != self.data:
-                self.name = data.get('name')
+                if self.name != data.get('name'):
+                    item = self.ui.get_curve_item()
+                    self.name = data.get('name')
+                    item.setText(self.name)
+
                 self.data = data
                 self.line.set_data(self.get_plot_functions())
                 self.ui.update_plot()
@@ -172,7 +176,7 @@ class ParametricCurve(Curve):
 
 class InterpolateCurve(Curve):
     type = 'INTERPOLATE'
-    dialog_class = dialogs.InterpolateDialog
+    dialog_class = dialogs.CurveNameDialog
 
     def create(self, data):
         fig = self.ui.figure
@@ -190,36 +194,41 @@ class InterpolateCurve(Curve):
     def get_plot_functions(self):
         self.help_line.set_data(self.xp, self.yp)
 
-        return self.newton()
+        Wn = self.newton()
+        xs = []
+        ys = []
 
-    @staticmethod
-    def lagrange(points):
-        def P(x):
-            total = 0
-            n = len(points)
+        if len(self.xp) >= 2:
+            for i in range(len(self.xp)-1):
+                x_first = self.xp[i]
+                x_last = self.xp[i+1]
+                if x_first > x_last:
+                    interval = (x_first - x_last)
+                else:
+                    interval = (x_last - x_first)
+                xs.extend(np.arange(x_first, x_last, interval/10))
+            xs.append(self.xp[-1])
 
-            for i in xrange(n):
-                xi, yi = points[i]
+            ys = [self.func(Wn, x) for x in xs]
+        return xs, ys
 
-                def g(i, n):
-                    tot_mul = 1
-                    for j in xrange(n):
-                        if i == j:
-                            continue
+    def func(self, Wn, x):
+        n = len(Wn) - 1
+        temp = list(Wn)
 
-                        xj, yj = points[j]
-                        tot_mul *= (x - xj) / float(xi - xj)
-
-                    return tot_mul
-
-                total += yi * g(i, n)
-            return total
-        return P
+        for k in range(n, 0, -1):
+            for i in range(k):
+                temp[k] = temp[k] * (x - self.xp[i])
+        return sum(temp)
 
     def newton(self):
-        points = self.data.get('points')
+        n = len(self.xp)
+        Wn = list(self.yp)
 
-        return [], []
+        for k in range(1, n):
+            for i in range(n-1, k-1, -1):
+                Wn[i] = (Wn[i] - Wn[i-1])/(self.xp[i] - self.xp[i-k])
+        return Wn
 
 
 class BezierCurve(Curve):
