@@ -116,3 +116,15 @@ class OpenFileDialog(object):
             'Otwórz plik'
         )
         return filename
+
+
+class SaveFileDialog(QtWidgets.QFileDialog):
+    default_path = 'untitled.json'
+
+    def __init__(self, default_path=None):
+        super(SaveFileDialog, self).__init__()
+        if default_path:
+            self.default_path = default_path
+
+    def save(self):
+        return self.getSaveFileName(self, 'Zapisz plik', self.default_path)

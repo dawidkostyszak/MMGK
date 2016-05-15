@@ -373,8 +373,9 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             })
         save_data['curves'] = curves_list
 
-        file_name = 'test.json'
-        with open(file_name, 'w') as outfile:
+        dialog = dialogs.SaveFileDialog()
+        filename, ext = dialog.save()
+        with open(filename, 'w') as outfile:
             json.dump(save_data, outfile)
             outfile.close()
 
@@ -389,11 +390,8 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             self.canvas.get_default_filename()
         )
 
-        filename, ext = QtWidgets.QFileDialog.getSaveFileName(
-            self,
-            'Zapisz plik',
-            default_path
-        )
+        dialog = dialogs.SaveFileDialog(default_path)
+        filename, ext = dialog.save()
 
         if filename:
             extension = None
