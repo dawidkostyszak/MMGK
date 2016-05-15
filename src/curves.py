@@ -5,6 +5,8 @@ import numpy as np
 import utils
 import dialogs
 
+from scipy.special import binom
+
 
 class Curve(object):
     type = None
@@ -132,6 +134,21 @@ class Curve(object):
         self.line.set_data(self.get_plot_functions())
 
 
+class CurveWithHelpLine(Curve):
+    def create(self, data):
+        fig = self.ui.figure
+        ax = fig.add_subplot(111)
+        self.xp = data.get('x_data', [])
+        self.yp = data.get('y_data', [])
+        self.help_line, = ax.plot(
+            self.xp, self.yp, ls='--', c='#666666', marker='x', mew=2,
+            mec='#204a87', picker=5, label=data.get('name') + ' help line'
+        )
+        created = super(CurveWithHelpLine, self).create(data)
+
+        return created
+
+
 class ParametricCurve(Curve):
     type = 'PARAM'
     dialog_class = dialogs.ParamDialog
@@ -174,29 +191,15 @@ class ParametricCurve(Curve):
         return xs, ys
 
 
-class InterpolateCurve(Curve):
+class InterpolateCurve(CurveWithHelpLine):
     type = 'INTERPOLATE'
     dialog_class = dialogs.CurveNameDialog
-
-    def create(self, data):
-        fig = self.ui.figure
-        ax = fig.add_subplot(111)
-        self.xp = data.get('x_data', [])
-        self.yp = data.get('y_data', [])
-        self.help_line, = ax.plot(
-            self.xp, self.yp, ls='--', c='#666666', marker='x', mew=2,
-            mec='#204a87', picker=5, label=data.get('name') + ' help line'
-        )
-        created = super(InterpolateCurve, self).create(data)
-
-        return created
 
     def get_plot_functions(self):
         self.help_line.set_data(self.xp, self.yp)
 
-        Wn = self.newton()
-        xs = []
-        ys = []
+        polynomial = self.newton()
+        xs, ys = [], []
 
         if len(self.xp) >= 2:
             for i in range(len(self.xp)-1):
@@ -209,7 +212,7 @@ class InterpolateCurve(Curve):
                 xs.extend(np.arange(x_first, x_last, interval/10))
             xs.append(self.xp[-1])
 
-            ys = [self.func(Wn, x) for x in xs]
+            ys = [self.func(polynomial, x) for x in xs]
         return xs, ys
 
     def func(self, Wn, x):
@@ -223,14 +226,48 @@ class InterpolateCurve(Curve):
 
     def newton(self):
         n = len(self.xp)
-        Wn = list(self.yp)
+        p = list(self.yp)  # polynomial
 
         for k in range(1, n):
             for i in range(n-1, k-1, -1):
-                Wn[i] = (Wn[i] - Wn[i-1])/(self.xp[i] - self.xp[i-k])
-        return Wn
+                p[i] = (p[i] - p[i-1])/(self.xp[i] - self.xp[i-k])
+        return p
 
 
-class BezierCurve(Curve):
+class BezierCurve(CurveWithHelpLine):
     type = 'BEZIER'
-    pass
+    dialog_class = dialogs.CurveNameDialog
+
+    def get_plot_functions(self):
+        self.help_line.set_data(self.xp, self.yp)
+
+        xs, ys = [], []
+
+        if len(self.xp) >= 2:
+            xs, ys = self.bezier(list(zip(self.xp, self.yp))).T
+        return xs, ys
+
+    def bezier(self, points, num=200):
+        """
+        Build Bezier curve from points.
+        """
+
+        n = len(points)
+        t = np.linspace(0, 1, num=num)
+        curve = np.zeros((num, 2))
+        for ii in range(n):
+            curve += np.outer(self.bernstein(n - 1, ii)(t), points[ii])
+        return curve
+
+    def bernstein(self, n, k):
+        """
+        Bernstein polynomial.
+        """
+
+        coeff = binom(n, k)  # Newton symbol
+
+        def _bpoly(x):
+            return coeff * x ** k * (1 - x) ** (n - k)  # (n k)x^i(1-x)^n-k
+
+        return _bpoly
+
