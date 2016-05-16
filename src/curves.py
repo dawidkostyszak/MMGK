@@ -63,6 +63,27 @@ class Curve(object):
 
         return False
 
+    def clone(self):
+        """
+        Clone curve.
+        :return: cloned :type boolean
+        """
+        curve_data = dict(self.data)
+        is_valid, data = self.draw_curve_dialog(True)
+
+        curve_data['name'] = data.get('name')
+        if self.xp:
+            curve_data['x_data'] = self.xp
+        if self.yp:
+            curve_data['y_data'] = self.yp
+
+        return is_valid, curve_data
+
+    def delete(self):
+        self.line.remove()
+        self.help_line.remove()
+        self.ui.canvas.draw()
+
     def get_plot_functions(self):
         """
         Get lists of points.
@@ -131,6 +152,11 @@ class Curve(object):
     def edit_point(self, event, index):
         self.xp[index] = event.xdata
         self.yp[index] = event.ydata
+        self.line.set_data(self.get_plot_functions())
+
+    def remove_point(self, index):
+        del self.xp[index]
+        del self.yp[index]
         self.line.set_data(self.get_plot_functions())
 
 

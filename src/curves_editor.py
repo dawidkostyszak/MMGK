@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import copy
 import json
 import os
 import matplotlib as mp
@@ -41,6 +42,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def __init__(self):
         super(CurvesEditor, self).__init__()
         self.point_binded = False
+        self.shift_is_held = False
         self.canvas = None
         self.toolbar = None
         self.setup_ui()
@@ -60,11 +62,17 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_layout.addWidget(self.curve_points)
 
         self.edit.menuAction().setVisible(False)
+        self.__toggle_curve_menu(False)
 
     def custom_settings(self):
         self.curve_points.table.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.Stretch
         )
+
+    def __toggle_curve_menu(self, visible):
+        self.curves_list.setVisible(visible)
+        self.edit_curve_data.setVisible(visible)
+        self.curve_points.setVisible(visible)
 
     def bind_actions(self):
         """
@@ -92,6 +100,8 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.edit_curve_data.change_curve_data.clicked.connect(
             self.__handle_editing
         )
+        self.edit_curve_data.delete_curve.clicked.connect(self.__delete_curve)
+        self.edit_curve_data.clone_curve.clicked.connect(self.__clone_curve)
 
     def unbind_point_actions(self):
         """
@@ -106,6 +116,8 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.canvas.mpl_disconnect(self.cid_release)
         self.canvas.mpl_disconnect(self.cid_pick)
         self.canvas.mpl_disconnect(self.cid_motion)
+        self.canvas.mpl_disconnect(self.cid_key_press)
+        self.canvas.mpl_disconnect(self.cid_key_release)
         self.point_binded = False
 
     def bind_point_actions(self):
@@ -133,7 +145,26 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             'motion_notify_event',
             self.__move_point
         )
+
+        self.canvas.setFocusPolicy(QtCore.Qt.ClickFocus)
+        self.canvas.setFocus()
+        self.cid_key_press = self.canvas.mpl_connect(
+            'key_press_event',
+            self.__on_key_press
+        )
+        self.cid_key_release = self.canvas.mpl_connect(
+            'key_release_event',
+            self.__on_key_release
+        )
+
         self.point_binded = True
+
+    def __on_key_press(self, event):
+        if event.key == 'shift':
+            self.shift_is_held = True
+
+    def __on_key_release(self, event):
+        self.shift_is_held = False
 
     def __add_point(self, event):
         """
@@ -159,6 +190,9 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         self.active_point['press'] = True
         self.active_point['id'] = event.ind[0]
+
+        if self.shift_is_held:
+            self.active_curve.remove_point(self.active_point['id'])
 
     def __move_point(self, event):
         """
@@ -228,6 +262,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if self.active_curve:
             self.unbind_point_actions()
             mp.artist.setp(self.active_curve.line, linewidth=1)
+            self.__change_help_curve(curve)
 
         self.active_curve = curve
         self.figure.curves[curve.name] = curve
@@ -240,6 +275,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         self.update_plot()
 
+        self.__toggle_curve_menu(True)
         self.bind_point_actions()
 
     def __change_curve(self, item):
@@ -249,12 +285,38 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         """
         self.unbind_point_actions()
         name = item.text()
+        self.__change_help_curve(self.figure.curves[name])
         mp.artist.setp(self.active_curve.line, linewidth=1)
         self.active_curve = self.figure.curves[name]
         mp.artist.setp(self.active_curve.line, linewidth=4)
         self.update_plot()
 
         self.bind_point_actions()
+
+    def __delete_curve(self):
+        name = self.active_curve.name
+
+        del self.figure.curves[name]
+        self.active_curve.delete()
+
+        row = self.curves_list.list.currentRow()
+        self.curves_list.list.takeItem(row)
+        item = self.curves_list.list.currentItem()
+        if item:
+            self.__change_curve(item)
+        else:
+            self.__toggle_curve_menu(False)
+            self.__clear_curve_data()
+
+    def __clone_curve(self):
+        cloned, data = self.active_curve.clone()
+        if cloned:
+            new_curve = CURVE_TYPES[self.active_curve.type](self)
+            self.__add_curve(new_curve, data)
+
+    def __change_help_curve(self, new_curve):
+        self.active_curve.help_line.set_visible(False)
+        new_curve.help_line.set_visible(True)
 
     def __clear_curve_data(self):
         self.curve_points.table.setRowCount(0)
