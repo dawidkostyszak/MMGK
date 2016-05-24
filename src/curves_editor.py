@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import copy
 import json
 import os
 import matplotlib as mp
@@ -21,8 +20,9 @@ Ui_MainWindow, QMainWindow = loadUiType("designs/curves_editor_design.ui")
 
 CURVE_TYPES = {
     'PARAM': curves.ParametricCurve,
-    'INTERPOLATE': curves.InterpolateCurve,
+    'NEWTON': curves.NewtonCurve,
     'BEZIER': curves.BezierCurve,
+    'RATIONAL_BEZIER': curves.RationalBezierCurve
 }
 
 
@@ -92,8 +92,14 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             self.__draw_interpolate_curve
         )
         self.action_bezier.triggered.connect(self.__draw_bezier_curve)
+        self.action_rational_bezier.triggered.connect(
+            self.__draw_rational_bezier_curve
+        )
         self.action_translate.triggered.connect(self.__translate_curve)
         self.action_rotate.triggered.connect(self.__rotate_curve)
+        self.action_transform_newton_bezier.triggered.connect(
+            self.__transform_newton_bezier
+        )
 
         # Actions on lists
         self.curves_list.list.itemClicked.connect(self.__change_curve)
@@ -108,7 +114,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Unbind actions from point.
         ParametricCurve doesn't support dynamic points.
         """
-        param_curve = isinstance(self.active_curve, curves.ParametricCurve)
+        param_curve = isinstance(self.active_curve, CURVE_TYPES['PARAM'])
         if param_curve or not self.point_binded:
             return
 
@@ -125,7 +131,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Bind actions from point.
         ParametricCurve doesn't support dynamic points.
         """
-        param_curve = isinstance(self.active_curve, curves.ParametricCurve)
+        param_curve = isinstance(self.active_curve, CURVE_TYPES['PARAM'])
         if param_curve or self.point_binded:
             return
 
@@ -228,6 +234,21 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if not self.active_curve:
             return
         self.active_curve.rotate()
+
+    def __transform_newton_bezier(self):
+        if not self.active_curve.type == 'NEWTON':
+            return
+
+        c = self.active_curve.to_bezier()
+        data = self.active_curve.data
+        if self.active_curve.xp:
+            data['x_data'] = c
+        if self.active_curve.yp:
+            data['y_data'] = self.active_curve.yp
+
+        new_curve = CURVE_TYPES['BEZIER'](self)
+        self.__delete_curve()
+        self.__add_curve(new_curve, data)
 
     def add_toolbar(self):
         self.toolbar = widgets.CustomNavigationToolbar(
@@ -473,7 +494,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         """
         Draw interpolate curve.
         """
-        curve = curves.InterpolateCurve(self)
+        curve = CURVE_TYPES['NEWTON'](self)
         self.__handle_add_curve(curve)
 
     def __draw_parametric_curve(self):
@@ -481,14 +502,21 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Draw parametric curve.
         :return:
         """
-        curve = curves.ParametricCurve(self)
+        curve = CURVE_TYPES['PARAM'](self)
         self.__handle_add_curve(curve)
 
     def __draw_bezier_curve(self):
         """
         Draw bezier curve.
         """
-        curve = curves.BezierCurve(self)
+        curve = CURVE_TYPES['BEZIER'](self)
+        self.__handle_add_curve(curve)
+
+    def __draw_rational_bezier_curve(self):
+        """
+        Draw rational bezier curve.
+        """
+        curve = CURVE_TYPES['RATIONAL_BEZIER'](self)
         self.__handle_add_curve(curve)
 
     def update_plot(self):

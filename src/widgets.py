@@ -55,7 +55,14 @@ class CustomNavigationToolbar(NavigationToolbar2QT):
 
     def pan(self, *args):
         super(CustomNavigationToolbar, self).pan(*args)
-        if self._active in ['PAN', 'ZOOM']:
+        if self._active == 'PAN':
+            self.ui.unbind_point_actions()
+        else:
+            self.ui.bind_point_actions()
+
+    def zoom(self, *args):
+        super(CustomNavigationToolbar, self).zoom(*args)
+        if self._active == 'ZOOM':
             self.ui.unbind_point_actions()
         else:
             self.ui.bind_point_actions()

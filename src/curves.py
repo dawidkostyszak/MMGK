@@ -217,8 +217,8 @@ class ParametricCurve(Curve):
         return xs, ys
 
 
-class InterpolateCurve(CurveWithHelpLine):
-    type = 'INTERPOLATE'
+class NewtonCurve(CurveWithHelpLine):
+    type = 'NEWTON'
     dialog_class = dialogs.CurveNameDialog
 
     def get_plot_functions(self):
@@ -259,6 +259,21 @@ class InterpolateCurve(CurveWithHelpLine):
                 p[i] = (p[i] - p[i-1])/(self.xp[i] - self.xp[i-k])
         return p
 
+    def to_bezier(self):
+        if len(self.xp) < 2:
+            return []
+
+        b = self.newton()
+        n = len(b) - 1
+        c = np.zeros(n + 1)
+        c[n] = b[n]
+
+        for k in range(n, 0, -1):
+            t = 1 - self.xp[k]
+            for i in range(k-1, n-1):
+                c[i] = (t * (i-k) * c[i] - self.xp[k] * (n-i) * c[i+1]) / (n-k) + b[k]
+        return c
+
 
 class BezierCurve(CurveWithHelpLine):
     type = 'BEZIER'
@@ -297,3 +312,63 @@ class BezierCurve(CurveWithHelpLine):
 
         return _bpoly
 
+
+class RationalBezierCurve(CurveWithHelpLine):
+    type = 'RATIONAL_BEZIER'
+    dialog_class = dialogs.CurveNameDialog
+
+    def __init__(self, ui):
+        super(RationalBezierCurve, self).__init__(ui)
+        self.wp = []
+
+    def get_plot_functions(self):
+        self.help_line.set_data(self.xp, self.yp)
+
+        xs, ys = [], []
+
+        if len(self.xp) >= 2:
+            xs, ys = self.rational_bezier(list(zip(self.xp, self.yp))).T
+        return xs, ys
+
+    def rational_bezier(self, points, num=200):
+        """
+        Build Rational Bezier curve from points.
+        """
+
+        n = len(points)
+        t = np.linspace(0, 1, num=num)
+        curve = np.zeros((num, 2))
+        temp = np.zeros((num, 2))
+        self.wp = [(1, 1) for i in range(num)]
+
+        for ii in range(n):
+            temp += np.outer(
+                self.bernstein(n - 1, ii)(t),
+                points[ii][0]
+            )
+
+        for ii in range(n):
+            curve += np.outer(
+                self.bernstein(n - 1, ii)(t),
+                (self.wp[ii][0]*points[ii][0], self.wp[ii][1]*points[ii][1])
+            )
+            # curve += np.outer(
+            #     self.bernstein(n - 1, ii)(t),
+            #     map(lambda x: self.wp[ii]*x, points[ii])
+            # ) / np.outer(self.bernstein(n - 1, ii)(t), self.wp)
+        for ii in range(n):
+            curve /= np.outer(self.bernstein(n - 1, ii)(t), self.wp[ii])
+
+        return curve
+
+    def bernstein(self, n, k):
+        """
+        Bernstein polynomial.
+        """
+
+        coeff = binom(n, k)  # Newton symbol
+
+        def _bpoly(x):
+            return coeff * x ** k * (1 - x) ** (n - k)  # (n i)t^i(1-t)^n-i
+
+        return _bpoly

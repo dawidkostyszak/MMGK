@@ -90,11 +90,13 @@
      <addaction name="action_parametric"/>
      <addaction name="action_interpolate"/>
      <addaction name="action_bezier"/>
+     <addaction name="action_rational_bezier"/>
     </widget>
     <addaction name="menu_add_curve"/>
     <addaction name="separator"/>
     <addaction name="action_translate"/>
     <addaction name="action_rotate"/>
+    <addaction name="action_transform_newton_bezier"/>
    </widget>
    <addaction name="file"/>
    <addaction name="edit"/>
@@ -151,12 +153,12 @@
   </action>
   <action name="action_bezier">
    <property name="text">
-    <string>Beziera</string>
+    <string>Krzywa Beziera</string>
    </property>
   </action>
   <action name="action_parametric">
    <property name="text">
-    <string>Parametryczną</string>
+    <string>Krzywa Parametryczna</string>
    </property>
   </action>
   <action name="action_translate">
@@ -167,6 +169,16 @@
   <action name="action_rotate">
    <property name="text">
     <string>Obrót krzywej</string>
+   </property>
+  </action>
+  <action name="action_rational_bezier">
+   <property name="text">
+    <string>Wymierna krzywa Beziera</string>
+   </property>
+  </action>
+  <action name="action_transform_newton_bezier">
+   <property name="text">
+    <string>Transformacja Newton -&gt; Bezier</string>
    </property>
   </action>
  </widget>
