@@ -288,29 +288,27 @@ class BezierCurve(CurveWithHelpLine):
             xs, ys = self.bezier(list(zip(self.xp, self.yp))).T
         return xs, ys
 
-    def bezier(self, points, num=200):
+    @staticmethod
+    def bezier(points, num=200):
         """
         Build Bezier curve from points.
         """
+        def _casteljau(x):
+            n = len(points)
+            W = np.zeros((n, n, 2))
 
-        n = len(points)
+            for i in range(n):
+                W[0][i] = points[i]
+
+            for i in range(1, n):
+                for k in range(0, n-i):
+                    W[i][k] = (1 - x) * W[i-1][k] + x * W[i-1][k+1]
+            return W[n-1][0]
+
         t = np.linspace(0, 1, num=num)
-        curve = np.zeros((num, 2))
-        for ii in range(n):
-            curve += np.outer(self.bernstein(n - 1, ii)(t), points[ii])
-        return curve
 
-    def bernstein(self, n, k):
-        """
-        Bernstein polynomial.
-        """
-
-        coeff = binom(n, k)  # Newton symbol
-
-        def _bpoly(x):
-            return coeff * x ** k * (1 - x) ** (n - k)  # (n k)x^i(1-x)^n-k
-
-        return _bpoly
+        curve = map(_casteljau, t)
+        return np.array(curve)
 
 
 class RationalBezierCurve(CurveWithHelpLine):
