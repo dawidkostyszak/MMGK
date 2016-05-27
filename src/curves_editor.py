@@ -239,12 +239,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if not self.active_curve.type == 'NEWTON':
             return
 
-        c = self.active_curve.to_bezier()
+        yp = self.active_curve.transform_to_bezier()
         data = self.active_curve.data
         if self.active_curve.xp:
-            data['x_data'] = c
+            data['x_data'] = self.active_curve.xp
         if self.active_curve.yp:
-            data['y_data'] = self.active_curve.yp
+            data['y_data'] = yp
 
         new_curve = CURVE_TYPES['BEZIER'](self)
         self.__delete_curve()

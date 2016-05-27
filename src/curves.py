@@ -221,58 +221,58 @@ class NewtonCurve(CurveWithHelpLine):
     type = 'NEWTON'
     dialog_class = dialogs.CurveNameDialog
 
-    def get_plot_functions(self):
+    def get_plot_functions(self, num=200):
         self.help_line.set_data(self.xp, self.yp)
 
-        polynomial = self.newton()
         xs, ys = [], []
 
         if len(self.xp) >= 2:
-            for i in range(len(self.xp)-1):
-                x_first = self.xp[i]
-                x_last = self.xp[i+1]
-                if x_first > x_last:
-                    interval = (x_first - x_last)
-                else:
-                    interval = (x_last - x_first)
-                xs.extend(np.arange(x_first, x_last, interval/10))
-            xs.append(self.xp[-1])
+            xs = np.linspace(self.xp[0], self.xp[-1], num)
+            ys = [self.newton(self.coef(), x) for x in xs]
 
-            ys = [self.func(polynomial, x) for x in xs]
         return xs, ys
 
-    def func(self, Wn, x):
-        n = len(Wn) - 1
-        temp = list(Wn)
-
-        for k in range(n, 0, -1):
-            for i in range(k):
-                temp[k] = temp[k] * (x - self.xp[i])
-        return sum(temp)
-
-    def newton(self):
+    def coef(self):
+        """
+        Calculate coefficients
+        :return: an array of coefficient
+        """
         n = len(self.xp)
-        p = list(self.yp)  # polynomial
+        b = np.array(self.yp)
 
-        for k in range(1, n):
-            for i in range(n-1, k-1, -1):
-                p[i] = (p[i] - p[i-1])/(self.xp[i] - self.xp[i-k])
-        return p
+        for i in range(1, n):
+            for k in range(n-1, i-1, -1):
+                b[k] = (b[k] - b[k-1])/(self.xp[k] - self.xp[k-i])
 
-    def to_bezier(self):
-        if len(self.xp) < 2:
+        return b
+
+    def newton(self, b, x):
+        """
+        Calculate newton polynomial
+        :param b: array returned by function coef()
+        :param x: the node to interpolate at
+        :return: the y_value interpolation
+        """
+        n = len(b) - 1
+        temp = b[n]
+        for k in range(n - 1, -1, -1):
+            temp = temp * (x - self.xp[k]) + b[k]
+        return temp
+
+    def transform_to_bezier(self):
+        n = len(self.xp) - 1
+        if n < 1:
             return []
 
-        b = self.newton()
-        n = len(b) - 1
-        c = np.zeros(n + 1)
+        b = self.coef()
+        c = np.zeros(n+1)
         c[n] = b[n]
 
-        for k in range(n, 0, -1):
+        for k in range(n-1, -1, -1):
             t = 1 - self.xp[k]
-            for i in range(k-1, n-1):
+            for i in range(k, n):
                 c[i] = (t * (i-k) * c[i] - self.xp[k] * (n-i) * c[i+1]) / (n-k) + b[k]
-        return c
+        return list(c)
 
 
 class BezierCurve(CurveWithHelpLine):
