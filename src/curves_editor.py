@@ -263,6 +263,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.__delete_curve()
         self.__add_curve(new_curve, data)
 
+    def bezier_degree_elevation(self):
+        self.active_curve.degree_elevation()
+
+    def bezier_degree_reduction(self):
+        self.active_curve.degree_reduction()
+
     def add_toolbar(self):
         self.toolbar = widgets.CustomNavigationToolbar(
             self, self.canvas, self.draw_view

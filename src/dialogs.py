@@ -25,6 +25,13 @@ class DialogMixin(QtWidgets.QDialog):
         pass
 
 
+class OptionsDialogMixin(DialogMixin):
+    action = None
+
+    def get_action(self):
+        return self.action
+
+
 class FigureDialog(DialogMixin, UI_FigureDialog):
     def get_data(self):
         return {
@@ -132,13 +139,6 @@ class SaveFileDialog(QtWidgets.QFileDialog):
         return self.getSaveFileName(self, 'Zapisz plik', self.default_path)
 
 
-class OptionsDialogMixin(DialogMixin):
-    action = None
-
-    def get_action(self):
-        return self.action
-
-
 class NewtonOptionsDialog(OptionsDialogMixin, UI_NewtonOptionsDialog):
     def __init__(self):
         super(NewtonOptionsDialog, self).__init__()
@@ -156,9 +156,9 @@ class BezierOptionsDialog(OptionsDialogMixin, UI_BezierOptionsDialog):
         self.reduce.clicked.connect(self.__handle_reduce)
 
     def __handle_increase(self):
-        self.action = ''
+        self.action = 'bezier_degree_elevation'
         self.accept()
 
     def __handle_reduce(self):
-        self.action = ''
+        self.action = 'bezier_degree_reduction'
         self.accept()

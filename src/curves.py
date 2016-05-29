@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from math import floor
 import numpy as np
 
 import utils
@@ -57,12 +58,15 @@ class Curve(object):
                     item.setText(self.name)
 
                 self.data = data
-                self.line.set_data(self.get_plot_functions())
-                self.ui.update_plot()
+                self.update()
                 return True
             return False
 
         return False
+
+    def update(self):
+        self.line.set_data(self.get_plot_functions())
+        self.ui.update_plot()
 
     def clone(self):
         """
@@ -312,6 +316,49 @@ class BezierCurve(CurveWithHelpLine):
 
         curve = map(_casteljau, t)
         return np.array(curve)
+
+    def degree_elevation(self):
+        """
+        Q[i] = i/n+1 * P[i-1] + (1 - i/n+1) * P[i] 1<=i<=n
+        """
+        P = np.array(zip(self.xp, self.yp))  # control points
+        n = len(P)
+
+        Q = np.zeros((n+1, 2))  # new control points
+        Q[0] = P[0]
+        Q[n] = P[n-1]
+        for i in range(1, n):
+            Q[i] = (i / float(n+1)) * P[i-1] + (1 - i / float(n+1)) * P[i]
+
+        xp, yp = Q.T
+        self.xp, self.yp = list(xp), list(yp)
+        self.update()
+
+    def degree_reduction(self):
+        P = np.array(zip(self.xp, self.yp))  # control points
+
+        n = len(P)
+        half = int(floor(n/2))
+
+        Q = np.zeros((n, 2))  # new control points
+        W = np.zeros((n-1, 2))  # calculate from first to floor(n/2)
+        Z = np.zeros((n, 2))  # calculate from last to floor(n/2) + 1
+
+        Q[0] = P[0]
+        for i in range(1, n):
+            Q[i] = (i/n) * P[i-1] + (1 - i/n) * P[i]
+
+        W[0] = Q[0]
+        for i in range(1, half):
+            W[i] = (n * Q[i] - i * W[i-1]) / (n - i)
+
+        Z[n-1] = Q[n-1]
+        for i in range(n-1, half, -1):
+            Z[i-1] = (n * Q[i] - (n - i) * Z[i]) / i
+
+        xp, yp = np.array(list(W[:half]) + list(Z[half:n-1])).T
+        self.xp, self.yp = list(xp), list(yp)
+        self.update()
 
 
 class RationalBezierCurve(CurveWithHelpLine):
