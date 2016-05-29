@@ -97,17 +97,17 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         )
         self.action_translate.triggered.connect(self.__translate_curve)
         self.action_rotate.triggered.connect(self.__rotate_curve)
-        self.action_transform_newton_bezier.triggered.connect(
-            self.__transform_newton_bezier
-        )
+        self.action_copy.triggered.connect(self.__clone_curve)
+        self.action_delete.triggered.connect(self.__delete_curve)
 
         # Actions on lists
         self.curves_list.list.itemClicked.connect(self.__change_curve)
         self.edit_curve_data.change_curve_data.clicked.connect(
             self.__handle_editing
         )
-        self.edit_curve_data.delete_curve.clicked.connect(self.__delete_curve)
-        self.edit_curve_data.clone_curve.clicked.connect(self.__clone_curve)
+        self.edit_curve_data.curve_options.clicked.connect(
+            self.__curve_options
+        )
 
     def unbind_point_actions(self):
         """
@@ -225,6 +225,19 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def __handle_editing(self):
         self.active_curve.edit()
 
+    def __curve_options(self):
+
+        dialog = self.active_curve.options_class()
+
+        if dialog.exec_():
+            action = dialog.get_action()
+            try:
+                func = getattr(self, action)
+            except AttributeError:
+                pass
+            else:
+                func()
+
     def __translate_curve(self):
         if not self.active_curve:
             return
@@ -235,7 +248,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             return
         self.active_curve.rotate()
 
-    def __transform_newton_bezier(self):
+    def transform_newton_to_bezier(self):
         if not self.active_curve.type == 'NEWTON':
             return
 

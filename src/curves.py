@@ -11,6 +11,7 @@ from scipy.special import binom
 class Curve(object):
     type = None
     dialog_class = None
+    options_class = None
 
     def __init__(self, ui):
         self.ui = ui
@@ -220,6 +221,7 @@ class ParametricCurve(Curve):
 class NewtonCurve(CurveWithHelpLine):
     type = 'NEWTON'
     dialog_class = dialogs.CurveNameDialog
+    options_class = dialogs.NewtonOptionsDialog
 
     def get_plot_functions(self, num=200):
         self.help_line.set_data(self.xp, self.yp)
@@ -278,6 +280,7 @@ class NewtonCurve(CurveWithHelpLine):
 class BezierCurve(CurveWithHelpLine):
     type = 'BEZIER'
     dialog_class = dialogs.CurveNameDialog
+    options_class = dialogs.BezierOptionsDialog
 
     def get_plot_functions(self):
         self.help_line.set_data(self.xp, self.yp)

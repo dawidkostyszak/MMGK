@@ -64,7 +64,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="delete_curve">
+       <widget class="QPushButton" name="curve_options">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -72,20 +72,7 @@
          </sizepolicy>
         </property>
         <property name="text">
-         <string>Usuń krzywą</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="clone_curve">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Kopiuj krzywą</string>
+         <string>Opcje krzywej</string>
         </property>
        </widget>
       </item>

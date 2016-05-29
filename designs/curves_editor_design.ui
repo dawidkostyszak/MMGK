@@ -92,11 +92,18 @@
      <addaction name="action_bezier"/>
      <addaction name="action_rational_bezier"/>
     </widget>
+    <widget class="QMenu" name="menu_curve_actions">
+     <property name="title">
+      <string>Działania na krzywej</string>
+     </property>
+     <addaction name="action_translate"/>
+     <addaction name="action_rotate"/>
+     <addaction name="action_copy"/>
+     <addaction name="action_delete"/>
+    </widget>
     <addaction name="menu_add_curve"/>
     <addaction name="separator"/>
-    <addaction name="action_translate"/>
-    <addaction name="action_rotate"/>
-    <addaction name="action_transform_newton_bezier"/>
+    <addaction name="menu_curve_actions"/>
    </widget>
    <addaction name="file"/>
    <addaction name="edit"/>
@@ -163,12 +170,12 @@
   </action>
   <action name="action_translate">
    <property name="text">
-    <string>Translacja krzywej</string>
+    <string>Translacja</string>
    </property>
   </action>
   <action name="action_rotate">
    <property name="text">
-    <string>Obrót krzywej</string>
+    <string>Obrót</string>
    </property>
   </action>
   <action name="action_rational_bezier">
@@ -179,6 +186,21 @@
   <action name="action_transform_newton_bezier">
    <property name="text">
     <string>Transformacja Newton -&gt; Bezier</string>
+   </property>
+  </action>
+  <action name="action_delete">
+   <property name="text">
+    <string>Usuń</string>
+   </property>
+  </action>
+  <action name="action_copy">
+   <property name="text">
+    <string>Kopiuj</string>
+   </property>
+  </action>
+  <action name="actionDf">
+   <property name="text">
+    <string>df</string>
    </property>
   </action>
  </widget>

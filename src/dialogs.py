@@ -11,6 +11,8 @@ UI_NameCurveDialog, _ = loadUiType("designs/name_curve_dialog.ui")
 UI_TranslateDialog, _ = loadUiType("designs/translate_curve_dialog.ui")
 UI_RotateDialog, _ = loadUiType("designs/rotate_curve_dialog.ui")
 UI_FigureDialog, _ = loadUiType("designs/add_figure_dialog.ui")
+UI_BezierOptionsDialog, _ = loadUiType("designs/bezier_curve_options_dialog.ui")
+UI_NewtonOptionsDialog, _ = loadUiType("designs/newton_curve_options_dialog.ui")
 
 
 class DialogMixin(QtWidgets.QDialog):
@@ -128,3 +130,35 @@ class SaveFileDialog(QtWidgets.QFileDialog):
 
     def save(self):
         return self.getSaveFileName(self, 'Zapisz plik', self.default_path)
+
+
+class OptionsDialogMixin(DialogMixin):
+    action = None
+
+    def get_action(self):
+        return self.action
+
+
+class NewtonOptionsDialog(OptionsDialogMixin, UI_NewtonOptionsDialog):
+    def __init__(self):
+        super(NewtonOptionsDialog, self).__init__()
+        self.convert.clicked.connect(self.__handle_convert)
+
+    def __handle_convert(self):
+        self.action = 'transform_newton_to_bezier'
+        self.accept()
+
+
+class BezierOptionsDialog(OptionsDialogMixin, UI_BezierOptionsDialog):
+    def __init__(self):
+        super(BezierOptionsDialog, self).__init__()
+        self.increase.clicked.connect(self.__handle_increase)
+        self.reduce.clicked.connect(self.__handle_reduce)
+
+    def __handle_increase(self):
+        self.action = ''
+        self.accept()
+
+    def __handle_reduce(self):
+        self.action = ''
+        self.accept()
