@@ -56,10 +56,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_list = widgets.CurvesList()
         self.edit_curve_data = widgets.EditCurveData()
         self.curve_points = widgets.CurvePoints()
+        self.rational_curve_points = widgets.RationalCurvePoints(self)
 
         self.curves_layout.addWidget(self.curves_list)
         self.curves_layout.addWidget(self.edit_curve_data)
         self.curves_layout.addWidget(self.curve_points)
+        self.curves_layout.addWidget(self.rational_curve_points)
 
         self.edit.menuAction().setVisible(False)
         self.__toggle_curve_menu(False)
@@ -68,11 +70,20 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curve_points.table.horizontalHeader().setSectionResizeMode(
             QtWidgets.QHeaderView.Stretch
         )
+        self.rational_curve_points.table.horizontalHeader().setSectionResizeMode(
+            QtWidgets.QHeaderView.Stretch
+        )
 
     def __toggle_curve_menu(self, visible):
         self.curves_list.setVisible(visible)
         self.edit_curve_data.setVisible(visible)
-        self.curve_points.setVisible(visible)
+        self.curve_points.setVisible(False)
+        self.rational_curve_points.setVisible(False)
+        if self.active_curve:
+            if isinstance(self.active_curve, CURVE_TYPES['RATIONAL_BEZIER']):
+                self.rational_curve_points.setVisible(True)
+            else:
+                self.curve_points.setVisible(True)
 
     def bind_actions(self):
         """
@@ -209,7 +220,12 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         if not (self.active_point['press'] and is_ppm):
             return
 
-        self.active_curve.edit_point(event, self.active_point['id'])
+        data = {
+            'x': event.xdata,
+            'y': event.ydata
+        }
+
+        self.active_curve.edit_point(data, self.active_point['id'])
         self.canvas.draw()
 
     def __on_release(self, event):
@@ -331,6 +347,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         mp.artist.setp(self.active_curve.line, linewidth=4)
         self.update_plot()
 
+        self.__toggle_curve_menu(True)
         self.bind_point_actions()
 
     def __delete_curve(self):
@@ -360,6 +377,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
     def __clear_curve_data(self):
         self.curve_points.table.setRowCount(0)
+        self.rational_curve_points.table.setRowCount(0)
 
     def __handle_add_figure(self):
         """
@@ -543,16 +561,26 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         Update plot data.
         """
         self.__clear_curve_data()
-        xs, ys = self.active_curve.help_line.get_data()
+        xp, yp = self.active_curve.help_line.get_data()
+        weights = []
+        if isinstance(self.active_curve, CURVE_TYPES['RATIONAL_BEZIER']):
+            points_table = self.rational_curve_points
+            weights = self.active_curve.weights
+        else:
+            points_table = self.curve_points
 
-        for i in range(len(xs)):
-            self.curve_points.table.insertRow(i)
-            self.curve_points.table.setItem(
-                i, 0, QtWidgets.QTableWidgetItem(str(xs[i]))
+        for i in range(len(xp)):
+            points_table.table.insertRow(i)
+            points_table.table.setItem(
+                i, 0, QtWidgets.QTableWidgetItem(str(xp[i]))
             )
-            self.curve_points.table.setItem(
-                i, 1, QtWidgets.QTableWidgetItem(str(ys[i]))
+            points_table.table.setItem(
+                i, 1, QtWidgets.QTableWidgetItem(str(yp[i]))
             )
+            if weights:
+                points_table.table.setItem(
+                    i, 2, QtWidgets.QTableWidgetItem(str(weights[i]))
+                )
 
         self.canvas.draw()
 

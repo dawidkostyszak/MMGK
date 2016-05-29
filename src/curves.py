@@ -6,8 +6,6 @@ import numpy as np
 import utils
 import dialogs
 
-from scipy.special import binom
-
 
 class Curve(object):
     type = None
@@ -154,9 +152,11 @@ class Curve(object):
             self.yp.append(event.ydata)
         self.line.set_data(self.get_plot_functions())
 
-    def edit_point(self, event, index):
-        self.xp[index] = event.xdata
-        self.yp[index] = event.ydata
+    def edit_point(self, data, index):
+        if data.get('x'):
+            self.xp[index] = data.get('x')
+        if data.get('y'):
+            self.yp[index] = data.get('y')
         self.line.set_data(self.get_plot_functions())
 
     def remove_point(self, index):
@@ -364,10 +364,23 @@ class BezierCurve(CurveWithHelpLine):
 class RationalBezierCurve(CurveWithHelpLine):
     type = 'RATIONAL_BEZIER'
     dialog_class = dialogs.CurveNameDialog
+    default_weight = 1.0
 
     def __init__(self, ui):
         super(RationalBezierCurve, self).__init__(ui)
-        self.wp = []
+        self.weights = []
+
+    def add_point(self, event, index=None):
+        if index is not None:
+            self.weights.insert(index, self.default_weight)
+        else:
+            self.weights.append(self.default_weight)
+        super(RationalBezierCurve, self).add_point(event, index)
+
+    def edit_point(self, data, index):
+        if data.get('w'):
+            self.weights[index] = data.get('w')
+        super(RationalBezierCurve, self).edit_point(data, index)
 
     def get_plot_functions(self):
         self.help_line.set_data(self.xp, self.yp)
@@ -382,41 +395,22 @@ class RationalBezierCurve(CurveWithHelpLine):
         """
         Build Rational Bezier curve from points.
         """
+        wp = self.weights
+        points = np.array(points)
 
-        n = len(points)
+        def _casteljau(x):
+            n = len(points)
+            W = np.zeros((n, n, 2))
+
+            for i in range(n):
+                W[0][i] = wp[i] * points[i]
+
+            for i in range(1, n):
+                for k in range(0, n-i):
+                    W[i][k] = (1 - x) * W[i-1][k] + x * W[i-1][k+1]
+            return W[n-1][0]
+
         t = np.linspace(0, 1, num=num)
-        curve = np.zeros((num, 2))
-        temp = np.zeros((num, 2))
-        self.wp = [(1, 1) for i in range(num)]
 
-        for ii in range(n):
-            temp += np.outer(
-                self.bernstein(n - 1, ii)(t),
-                points[ii][0]
-            )
-
-        for ii in range(n):
-            curve += np.outer(
-                self.bernstein(n - 1, ii)(t),
-                (self.wp[ii][0]*points[ii][0], self.wp[ii][1]*points[ii][1])
-            )
-            # curve += np.outer(
-            #     self.bernstein(n - 1, ii)(t),
-            #     map(lambda x: self.wp[ii]*x, points[ii])
-            # ) / np.outer(self.bernstein(n - 1, ii)(t), self.wp)
-        for ii in range(n):
-            curve /= np.outer(self.bernstein(n - 1, ii)(t), self.wp[ii])
-
-        return curve
-
-    def bernstein(self, n, k):
-        """
-        Bernstein polynomial.
-        """
-
-        coeff = binom(n, k)  # Newton symbol
-
-        def _bpoly(x):
-            return coeff * x ** k * (1 - x) ** (n - k)  # (n i)t^i(1-t)^n-i
-
-        return _bpoly
+        curve = map(_casteljau, t)
+        return np.array(curve)

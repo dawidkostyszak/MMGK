@@ -10,6 +10,7 @@ import dialogs
 import utils
 
 UI_CurvePoints, _ = loadUiType("designs/curve_points.ui")
+UI_RationalCurvePoints, _ = loadUiType("designs/rational_curve_points.ui")
 UI_EditCurveData, _ = loadUiType("designs/edit_curve_data.ui")
 UI_CurvesList, _ = loadUiType("designs/curves_list.ui")
 
@@ -84,3 +85,28 @@ class EditCurveData(WidgetMixin, UI_EditCurveData):
 
 class CurvePoints(WidgetMixin, UI_CurvePoints):
     pass
+
+
+class RationalCurvePoints(WidgetMixin, UI_RationalCurvePoints):
+
+    def __init__(self, parent=None):
+        self.ui = parent
+        super(RationalCurvePoints, self).__init__(parent)
+        self.table.cellChanged.connect(self.__handle_update)
+
+    def __handle_update(self, *args, **kwargs):
+        row, col = args
+        item = self.table.currentItem()
+
+        if item:
+            data = {}
+            value = float(item.text())
+            if col == 0:
+                data['x'] = value
+            elif col == 1:
+                data['y'] = value
+            elif col == 2:
+                data['w'] = value
+
+            self.ui.active_curve.edit_point(data, row)
+            self.ui.canvas.draw()
