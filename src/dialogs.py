@@ -154,6 +154,7 @@ class BezierOptionsDialog(OptionsDialogMixin, UI_BezierOptionsDialog):
         super(BezierOptionsDialog, self).__init__()
         self.increase.clicked.connect(self.__handle_increase)
         self.reduce.clicked.connect(self.__handle_reduce)
+        self.split.clicked.connect(self.__handle_split)
 
     def __handle_increase(self):
         self.action = 'bezier_degree_elevation'
@@ -161,4 +162,8 @@ class BezierOptionsDialog(OptionsDialogMixin, UI_BezierOptionsDialog):
 
     def __handle_reduce(self):
         self.action = 'bezier_degree_reduction'
+        self.accept()
+
+    def __handle_split(self):
+        self.action = 'bezier_split'
         self.accept()

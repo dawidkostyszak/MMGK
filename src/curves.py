@@ -414,6 +414,30 @@ class BezierCurve(CurveWithHelpLine):
         self.points = W[:half] + Z[half:n-1]
         self.update()
 
+    def split(self):
+        def _casteljau(points, x):
+            n = len(points)
+            W = np.zeros((n, n, 2))
+
+            for i in range(n):
+                W[0][i] = points[i]
+
+            for i in range(1, n):
+                for k in range(0, n-i):
+                    W[i][k] = (1 - x) * W[i-1][k] + x * W[i-1][k+1]
+            return W
+
+        W = _casteljau(self.points_2D, 0.5)
+        n = len(self.points) - 1
+        left = []
+        for i in range(n, -1, -1):
+            left.append(W[n-i][0])
+
+        right = []
+        for i in range(n, -1, -1):
+            right.append(W[i][n-i])
+        return left, right
+
 
 class RationalBezierCurve(BezierCurve):
     type = 'RATIONAL_BEZIER'
