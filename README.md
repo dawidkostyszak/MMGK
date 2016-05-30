@@ -11,6 +11,7 @@ Działa na krzywych:
 - Obrót i translacja krzywej
 - Podnoszenie stopnia krzywej dla wielomianowych i wymiernych krzywych Beziera
 - Obniżanie stopnia krzywej dla wielomianowych i wymiernych krzywych Beziera
+- Podział krzywej Beziera na dwie części
 
 Działania na punktach:
 - Dodawanie/usuwanie punktów
@@ -23,5 +24,4 @@ Inne:
 - Zapis jako projekt
 
 WIP:
-- Podział krzywej na dwie części
 - Transformacji krzywej w postaci Newtona do postaci wielomianowej Beziera
