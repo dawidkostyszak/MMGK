@@ -288,23 +288,22 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def bezier_split(self):
         left, right = self.active_curve.split()
         name = self.active_curve.name
+        c_type = self.active_curve.type
         self.__delete_curve()
 
         left_data = {
             'name': name + ' left',
             'points': left
         }
-        c = CURVE_TYPES['BEZIER'](self)
-        c_data = c.load(left_data)
-        self.__add_curve(c, c_data)
+        c = CURVE_TYPES[c_type](self)
+        self.__add_curve(c, left_data)
 
         right_data = {
             'name': name + ' right',
             'points': right
         }
-        c = CURVE_TYPES['BEZIER'](self)
-        c_data = c.load(right_data)
-        self.__add_curve(c, c_data)
+        c = CURVE_TYPES[c_type](self)
+        self.__add_curve(c, right_data)
 
     def add_toolbar(self):
         self.toolbar = widgets.CustomNavigationToolbar(
