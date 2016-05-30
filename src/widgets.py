@@ -75,23 +75,10 @@ class WidgetMixin(QtWidgets.QWidget):
         self.setupUi(self)
 
 
-class CurvesList(WidgetMixin, UI_CurvesList):
-    pass
-
-
-class EditCurveData(WidgetMixin, UI_EditCurveData):
-    pass
-
-
-class CurvePoints(WidgetMixin, UI_CurvePoints):
-    pass
-
-
-class RationalCurvePoints(WidgetMixin, UI_RationalCurvePoints):
-
+class CurvePointsMixin(WidgetMixin):
     def __init__(self, parent=None):
+        super(CurvePointsMixin, self).__init__(parent)
         self.ui = parent
-        super(RationalCurvePoints, self).__init__(parent)
         self.table.cellChanged.connect(self.__handle_update)
 
     def __handle_update(self, *args, **kwargs):
@@ -110,3 +97,19 @@ class RationalCurvePoints(WidgetMixin, UI_RationalCurvePoints):
 
             self.ui.active_curve.edit_point(data, row)
             self.ui.canvas.draw()
+
+
+class CurvesList(WidgetMixin, UI_CurvesList):
+    pass
+
+
+class EditCurveData(WidgetMixin, UI_EditCurveData):
+    pass
+
+
+class CurvePoints(CurvePointsMixin, UI_CurvePoints):
+    pass
+
+
+class RationalCurvePoints(CurvePointsMixin, UI_RationalCurvePoints):
+    pass

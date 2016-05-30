@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
-
+import copy
 from math import floor
 import numpy as np
 
 import utils
 import dialogs
+from point import Point
 
 
 class Curve(object):
@@ -18,8 +19,7 @@ class Curve(object):
         self.line = None
         self.help_line = None
         self.data = {}
-        self.xp = []
-        self.yp = []
+        self.points = []
         self.translation = [0, 0]
         self.rotation = 0
 
@@ -75,10 +75,7 @@ class Curve(object):
         is_valid, data = self.draw_curve_dialog(True)
 
         curve_data['name'] = data.get('name')
-        if self.xp:
-            curve_data['x_data'] = self.xp
-        if self.yp:
-            curve_data['y_data'] = self.yp
+        curve_data['points'] = copy.deepcopy(self.points)
 
         return is_valid, curve_data
 
@@ -86,6 +83,12 @@ class Curve(object):
         self.line.remove()
         self.help_line.remove()
         self.ui.canvas.draw()
+
+    def load(self, data):
+        return data
+
+    def save(self):
+        return {}
 
     def get_plot_functions(self):
         """
@@ -105,8 +108,9 @@ class Curve(object):
 
             self.translation[0] += data.get('x')
             self.translation[1] += data.get('y')
-            self.xp = map(lambda x: x + data.get('x'), self.xp)
-            self.yp = map(lambda y: y + data.get('y'), self.yp)
+
+            for p in self.points:
+                p.update(data.get('x'), data.get('y'))
 
             self.line.set_data(self.get_plot_functions())
             self.ui.update_plot()
@@ -144,33 +148,43 @@ class Curve(object):
         if event.inaxes != self.help_line.axes:
             return
 
+        point = Point(event.xdata, event.ydata)
+
         if index is not None:
-            self.xp.insert(index, event.xdata)
-            self.yp.insert(index, event.ydata)
+            self.points.insert(index, point)
         else:
-            self.xp.append(event.xdata)
-            self.yp.append(event.ydata)
+            self.points.append(point)
         self.line.set_data(self.get_plot_functions())
 
     def edit_point(self, data, index):
         if data.get('x'):
-            self.xp[index] = data.get('x')
+            self.points[index].x = data.get('x')
         if data.get('y'):
-            self.yp[index] = data.get('y')
+            self.points[index].y = data.get('y')
         self.line.set_data(self.get_plot_functions())
 
     def remove_point(self, index):
-        del self.xp[index]
-        del self.yp[index]
+        del self.points[index]
         self.line.set_data(self.get_plot_functions())
+
+    @property
+    def xp(self):
+        return [p.x for p in self.points]
+
+    @property
+    def yp(self):
+        return [p.y for p in self.points]
+
+    @property
+    def points_2D(self):
+        return map(lambda p: p.cord, self.points)
 
 
 class CurveWithHelpLine(Curve):
     def create(self, data):
         fig = self.ui.figure
         ax = fig.add_subplot(111)
-        self.xp = data.get('x_data', [])
-        self.yp = data.get('y_data', [])
+        self.points = data.get('points', [])
         self.help_line, = ax.plot(
             self.xp, self.yp, ls='--', c='#666666', marker='x', mew=2,
             mec='#204a87', picker=5, label=data.get('name') + ' help line'
@@ -178,6 +192,23 @@ class CurveWithHelpLine(Curve):
         created = super(CurveWithHelpLine, self).create(data)
 
         return created
+
+    def save(self):
+        return {
+            'data': {
+                'points': [p.save() for p in self.points],
+                'name': self.name
+            },
+            'type': self.type
+        }
+
+    @staticmethod
+    def load(data):
+        points = [Point(*p) for p in data.get('points')]
+        return {
+            'name': data.get('name'),
+            'points': points
+        }
 
 
 class ParametricCurve(Curve):
@@ -197,6 +228,12 @@ class ParametricCurve(Curve):
             self.help_line = self.line
 
         return edited
+
+    def save(self):
+        return {
+            'data': self.data,
+            'type': self.type
+        }
 
     def get_plot_functions(self):
         range_t = utils.parse_range(self.data.get('range'))
@@ -232,7 +269,7 @@ class NewtonCurve(CurveWithHelpLine):
 
         xs, ys = [], []
 
-        if len(self.xp) >= 2:
+        if len(self.points) >= 2:
             xs = np.linspace(self.xp[0], self.xp[-1], num)
             ys = [self.newton(self.coef(), x) for x in xs]
 
@@ -286,13 +323,26 @@ class BezierCurve(CurveWithHelpLine):
     dialog_class = dialogs.CurveNameDialog
     options_class = dialogs.BezierOptionsDialog
 
+    def __init__(self, ui):
+        super(BezierCurve, self).__init__(ui)
+        self.size = 0
+
+    def create(self, data):
+        created = super(BezierCurve, self).create(data)
+        self.size = len(self.points)
+        return created
+
+    def add_point(self, event, index=None):
+        super(BezierCurve, self).add_point(event, index)
+        self.size += 1
+
     def get_plot_functions(self):
         self.help_line.set_data(self.xp, self.yp)
 
         xs, ys = [], []
 
-        if len(self.xp) >= 2:
-            xs, ys = self.bezier(list(zip(self.xp, self.yp))).T
+        if len(self.points) >= 2:
+            xs, ys = self.bezier(self.points_2D).T
         return xs, ys
 
     @staticmethod
@@ -321,65 +371,61 @@ class BezierCurve(CurveWithHelpLine):
         """
         Q[i] = i/n+1 * P[i-1] + (1 - i/n+1) * P[i] 1<=i<=n
         """
-        P = np.array(zip(self.xp, self.yp))  # control points
+        P = self.points  # control points
         n = len(P)
 
-        Q = np.zeros((n+1, 2))  # new control points
+        Q = [0 for _ in range(n+1)]  # new control points
         Q[0] = P[0]
         Q[n] = P[n-1]
         for i in range(1, n):
-            Q[i] = (i / float(n+1)) * P[i-1] + (1 - i / float(n+1)) * P[i]
+            c = (i / float(n+1)) * np.array(P[i-1].cord) + (1 - i / float(n+1)) * np.array(P[i].cord)
+            Q[i] = Point(c[0], c[1], P[i].weight)
 
-        xp, yp = Q.T
-        self.xp, self.yp = list(xp), list(yp)
+        self.points = Q
         self.update()
 
     def degree_reduction(self):
-        P = np.array(zip(self.xp, self.yp))  # control points
+        n = len(self.points)
+        if n == self.size:
+            return
 
-        n = len(P)
+        P = self.points  # control points
         half = int(floor(n/2))
 
-        Q = np.zeros((n, 2))  # new control points
-        W = np.zeros((n-1, 2))  # calculate from first to floor(n/2)
-        Z = np.zeros((n, 2))  # calculate from last to floor(n/2) + 1
+        Q = [0 for _ in range(n+1)]  # new control points
+        W = [0 for _ in range(n)]  # calculate from first to floor(n/2)
+        Z = [0 for _ in range(n+1)]  # calculate from last to floor(n/2) + 1
 
         Q[0] = P[0]
         for i in range(1, n):
-            Q[i] = (i/n) * P[i-1] + (1 - i/n) * P[i]
+            c = (i/n) * np.array(P[i-1].cord) + (1 - i/n) * np.array(P[i].cord)
+            Q[i] = Point(c[0], c[1], P[i].weight)
 
         W[0] = Q[0]
         for i in range(1, half):
-            W[i] = (n * Q[i] - i * W[i-1]) / (n - i)
+            c = (n * np.array(Q[i].cord) - i * np.array(W[i-1].cord)) / (n - i)
+            W[i] = Point(c[0], c[1], Q[i].weight)
 
         Z[n-1] = Q[n-1]
         for i in range(n-1, half, -1):
-            Z[i-1] = (n * Q[i] - (n - i) * Z[i]) / i
+            c = (n * np.array(Q[i].cord) - (n - i) * np.array(Z[i].cord)) / i
+            Z[i-1] = Point(c[0], c[1], Q[i].weight)
 
-        xp, yp = np.array(list(W[:half]) + list(Z[half:n-1])).T
-        self.xp, self.yp = list(xp), list(yp)
+        self.points = W[:half] + Z[half:n-1]
         self.update()
 
 
-class RationalBezierCurve(CurveWithHelpLine):
+class RationalBezierCurve(BezierCurve):
     type = 'RATIONAL_BEZIER'
     dialog_class = dialogs.CurveNameDialog
-    default_weight = 1.0
 
-    def __init__(self, ui):
-        super(RationalBezierCurve, self).__init__(ui)
-        self.weights = []
-
-    def add_point(self, event, index=None):
-        if index is not None:
-            self.weights.insert(index, self.default_weight)
-        else:
-            self.weights.append(self.default_weight)
-        super(RationalBezierCurve, self).add_point(event, index)
+    @property
+    def weights(self):
+        return [p.weight for p in self.points]
 
     def edit_point(self, data, index):
         if data.get('w'):
-            self.weights[index] = data.get('w')
+            self.points[index].weight = data.get('w')
         super(RationalBezierCurve, self).edit_point(data, index)
 
     def get_plot_functions(self):
@@ -388,14 +434,13 @@ class RationalBezierCurve(CurveWithHelpLine):
         xs, ys = [], []
 
         if len(self.xp) >= 2:
-            xs, ys = self.rational_bezier(list(zip(self.xp, self.yp))).T
+            xs, ys = self.rational_bezier(self.points_2D).T
         return xs, ys
 
     def rational_bezier(self, points, num=200):
         """
         Build Rational Bezier curve from points.
         """
-        wp = self.weights
         points = np.array(points)
 
         def _casteljau(x):
@@ -403,7 +448,7 @@ class RationalBezierCurve(CurveWithHelpLine):
             W = np.zeros((n, n, 2))
 
             for i in range(n):
-                W[0][i] = wp[i] * points[i]
+                W[0][i] = self.weights[i] * points[i]
 
             for i in range(1, n):
                 for k in range(0, n-i):

@@ -55,7 +55,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         self.curves_list = widgets.CurvesList()
         self.edit_curve_data = widgets.EditCurveData()
-        self.curve_points = widgets.CurvePoints()
+        self.curve_points = widgets.CurvePoints(self)
         self.rational_curve_points = widgets.RationalCurvePoints(self)
 
         self.curves_layout.addWidget(self.curves_list)
@@ -372,7 +372,8 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
             self.__add_curve(new_curve, data)
 
     def __change_help_curve(self, new_curve):
-        self.active_curve.help_line.set_visible(False)
+        if self.active_curve.type != 'PARAM':
+            self.active_curve.help_line.set_visible(False)
         new_curve.help_line.set_visible(True)
 
     def __clear_curve_data(self):
@@ -445,9 +446,9 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
             for curve in reversed(data.get('curves')):
                 c_type = curve.get('type')
-                c_data = curve.get('data')
 
                 c = CURVE_TYPES[c_type](self)
+                c_data = c.load(curve.get('data'))
                 self.__add_curve(c, c_data)
 
     def __save_project(self):
@@ -481,16 +482,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         curves_list = []
 
         for curve in self.figure.curves.values():
-            data = curve.data
-            if curve.xp:
-                data['x_data'] = curve.xp
-            if curve.yp:
-                data['y_data'] = curve.yp
-
-            curves_list.append({
-                'data': curve.data,
-                'type': curve.type,
-            })
+            curves_list.append(curve.save())
         save_data['curves'] = curves_list
 
         dialog = dialogs.SaveFileDialog()
