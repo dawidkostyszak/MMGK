@@ -247,12 +247,13 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         if dialog.exec_():
             action = dialog.get_action()
+            params = dialog.get_params()
             try:
                 func = getattr(self, action)
             except AttributeError:
                 pass
             else:
-                func()
+                func(**params)
 
     def __translate_curve(self):
         if not self.active_curve:
@@ -277,11 +278,11 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.__delete_curve()
         self.__add_curve(new_curve, data)
 
-    def bezier_degree_elevation(self):
-        self.active_curve.degree_elevation()
+    def bezier_degree_elevation(self, number):
+        self.active_curve.degree_elevation(number)
 
-    def bezier_degree_reduction(self):
-        self.active_curve.degree_reduction()
+    def bezier_degree_reduction(self, number):
+        self.active_curve.degree_reduction(number)
 
     def bezier_split(self):
         left, right = self.active_curve.split()

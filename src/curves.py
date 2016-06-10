@@ -367,51 +367,53 @@ class BezierCurve(CurveWithHelpLine):
         curve = map(_casteljau, t)
         return np.array(curve)
 
-    def degree_elevation(self):
+    def degree_elevation(self, number):
         """
         Q[i] = i/n+1 * P[i-1] + (1 - i/n+1) * P[i] 1<=i<=n
         """
-        P = self.points  # control points
-        n = len(P)
+        for _ in range(number):
+            P = self.points  # control points
+            n = len(P)
 
-        Q = [0 for _ in range(n+1)]  # new control points
-        Q[0] = P[0]
-        Q[n] = P[n-1]
-        for i in range(1, n):
-            c = (i / float(n+1)) * np.array(P[i-1].cord) + (1 - i / float(n+1)) * np.array(P[i].cord)
-            Q[i] = Point(c[0], c[1], P[i].weight)
+            Q = [0 for _ in range(n+1)]  # new control points
+            Q[0] = P[0]
+            Q[n] = P[n-1]
+            for i in range(1, n):
+                c = (i / float(n+1)) * np.array(P[i-1].cord) + (1 - i / float(n+1)) * np.array(P[i].cord)
+                Q[i] = Point(c[0], c[1], P[i].weight)
 
-        self.points = Q
+            self.points = Q
         self.update()
 
-    def degree_reduction(self):
-        n = len(self.points)
-        if n == self.size:
-            return
+    def degree_reduction(self, number):
+        for _ in range(number):
+            n = len(self.points)
+            if n == self.size:
+                break
 
-        P = self.points  # control points
-        half = int(floor(n/2))
+            P = self.points  # control points
+            half = int(floor(n/2))
 
-        Q = [0 for _ in range(n+1)]  # new control points
-        W = [0 for _ in range(n)]  # calculate from first to floor(n/2)
-        Z = [0 for _ in range(n+1)]  # calculate from last to floor(n/2) + 1
+            Q = [0 for _ in range(n+1)]  # new control points
+            W = [0 for _ in range(n)]  # calculate from first to floor(n/2)
+            Z = [0 for _ in range(n+1)]  # calculate from last to floor(n/2) + 1
 
-        Q[0] = P[0]
-        for i in range(1, n):
-            c = (i/n) * np.array(P[i-1].cord) + (1 - i/n) * np.array(P[i].cord)
-            Q[i] = Point(c[0], c[1], P[i].weight)
+            Q[0] = P[0]
+            for i in range(1, n):
+                c = (i/n) * np.array(P[i-1].cord) + (1 - i/n) * np.array(P[i].cord)
+                Q[i] = Point(c[0], c[1], P[i].weight)
 
-        W[0] = Q[0]
-        for i in range(1, half):
-            c = (n * np.array(Q[i].cord) - i * np.array(W[i-1].cord)) / (n - i)
-            W[i] = Point(c[0], c[1], Q[i].weight)
+            W[0] = Q[0]
+            for i in range(1, half):
+                c = (n * np.array(Q[i].cord) - i * np.array(W[i-1].cord)) / (n - i)
+                W[i] = Point(c[0], c[1], Q[i].weight)
 
-        Z[n-1] = Q[n-1]
-        for i in range(n-1, half, -1):
-            c = (n * np.array(Q[i].cord) - (n - i) * np.array(Z[i].cord)) / i
-            Z[i-1] = Point(c[0], c[1], Q[i].weight)
+            Z[n-1] = Q[n-1]
+            for i in range(n-1, half, -1):
+                c = (n * np.array(Q[i].cord) - (n - i) * np.array(Z[i].cord)) / i
+                Z[i-1] = Point(c[0], c[1], Q[i].weight)
 
-        self.points = W[:half] + Z[half:n-1]
+            self.points = W[:half] + Z[half:n-1]
         self.update()
 
     def split(self):

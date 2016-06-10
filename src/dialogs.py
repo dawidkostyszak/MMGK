@@ -27,9 +27,13 @@ class DialogMixin(QtWidgets.QDialog):
 
 class OptionsDialogMixin(DialogMixin):
     action = None
+    params = {}
 
     def get_action(self):
         return self.action
+
+    def get_params(self):
+        return self.params
 
 
 class FigureDialog(DialogMixin, UI_FigureDialog):
@@ -158,10 +162,12 @@ class BezierOptionsDialog(OptionsDialogMixin, UI_BezierOptionsDialog):
 
     def __handle_increase(self):
         self.action = 'bezier_degree_elevation'
+        self.params['number'] = self.increase_number.value()
         self.accept()
 
     def __handle_reduce(self):
         self.action = 'bezier_degree_reduction'
+        self.params['number'] = self.reduce_number.value()
         self.accept()
 
     def __handle_split(self):
