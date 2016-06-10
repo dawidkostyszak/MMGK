@@ -270,12 +270,10 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         yp = self.active_curve.transform_to_bezier()
         data = self.active_curve.data
-        if self.active_curve.xp:
-            data['x_data'] = self.active_curve.xp
-        if self.active_curve.yp:
-            data['y_data'] = yp
+        data['points'] = zip(self.active_curve.xp, yp)
 
         new_curve = CURVE_TYPES['BEZIER'](self)
+        data = new_curve.load(data)
         self.__delete_curve()
         self.__add_curve(new_curve, data)
 

@@ -169,15 +169,15 @@ class Curve(object):
 
     @property
     def xp(self):
-        return [p.x for p in self.points]
+        return list(p.x for p in self.points)
 
     @property
     def yp(self):
-        return [p.y for p in self.points]
+        return list(p.y for p in self.points)
 
     @property
     def points_2D(self):
-        return map(lambda p: p.cord, self.points)
+        return list(map(lambda p: p.cord, self.points))
 
 
 class CurveWithHelpLine(Curve):

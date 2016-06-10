@@ -1,6 +1,6 @@
 Rodzaje krzywych:
 - Krzywa parametryczna
-- Krzywa w postaci interpolacji Newtona
+- Krzywa w postaci wielomianu Newtona
 - Krzywa Beziera
 - Wymierna krzywa Beziera
 
@@ -22,6 +22,12 @@ Inne:
 - Ustalanie tła
 - Zapis jako obrazek
 - Zapis jako projekt
+- Wczytanie projektu
 
 WIP:
 - Transformacji krzywej w postaci Newtona do postaci wielomianowej Beziera
+
+TODO:
+- Parametryzacja podziału krzywej
+- Możliwość podwyższania i obniżania stopnia krzywej o więcej niż 1
+- Zmiana obniżania stopnia krzywej Beziera (inny sposób)
