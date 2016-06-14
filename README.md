@@ -28,11 +28,12 @@
 - Usuwanie i kopiowanie krzywej
 - Obrót i translacja krzywej
 - Podnoszenie stopnia krzywej dla wielomianowych i wymiernych krzywych Beziera
-- Obniżanie stopnia krzywej dla wielomianowych i wymiernych krzywych Beziera
-- Podział krzywej Beziera na dwie części
+- Obniżanie stopnia krzywej dla wielomianowych i wymiernych krzywych Beziera,
+    o więcej niż jeden stopień
+- Podział krzywej Beziera na dwie części, poprzez wskazanie na krzywej (CTRL + PPM)
 
 # Działania na punktach:
-- Dodawanie/usuwanie punktów
+- Dodawanie/usuwanie punktów (LPM/SHIFT+PPM)
 - Zmiana wagi punktu w przypadku wymiernej krzywej Beziera
 
 # Inne:
