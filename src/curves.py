@@ -181,6 +181,10 @@ class Curve(object):
 
 
 class CurveWithHelpLine(Curve):
+    def __init__(self, ui, num=200):
+        super(CurveWithHelpLine, self).__init__(ui)
+        self.t_list = np.linspace(0, 1, num=num)
+
     def create(self, data):
         fig = self.ui.figure
         ax = fig.add_subplot(111)
@@ -416,7 +420,7 @@ class BezierCurve(CurveWithHelpLine):
             self.points = W[:half] + Z[half:n-1]
         self.update()
 
-    def split(self):
+    def split(self, t):
         def _casteljau(points, x):
             n = len(points)
             W = np.zeros((n, n, 2))
@@ -429,7 +433,7 @@ class BezierCurve(CurveWithHelpLine):
                     W[i][k] = (1 - x) * W[i-1][k] + x * W[i-1][k+1]
             return W
 
-        W = _casteljau(self.points_2D, 0.5)
+        W = _casteljau(self.points_2D, t)
         n = len(self.points) - 1
         left = []
         for i in range(n, -1, -1):
@@ -486,7 +490,7 @@ class RationalBezierCurve(BezierCurve):
         curve = map(_casteljau, t)
         return np.array(curve)
 
-    def split(self):
+    def split(self, t):
         def _casteljau(points, x):
             points = np.array(points)
             n = len(points)
@@ -500,7 +504,7 @@ class RationalBezierCurve(BezierCurve):
                     W[i][k] = (1 - x) * W[i-1][k] + x * W[i-1][k+1]
             return W
 
-        W = _casteljau(self.points_2D, 0.5)
+        W = _casteljau(self.points_2D, t)
         n = len(self.points) - 1
         left = []
         for i in range(n, -1, -1):

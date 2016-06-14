@@ -61,25 +61,6 @@
      </layout>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QWidget" name="widget_2" native="true">
-     <layout class="QHBoxLayout" name="horizontalLayout_3">
-      <item>
-       <widget class="QPushButton" name="split">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="text">
-         <string>Podziel</string>
-        </property>
-       </widget>
-      </item>
-     </layout>
-    </widget>
-   </item>
    <item row="0" column="0">
     <widget class="QWidget" name="widget_3" native="true">
      <layout class="QHBoxLayout" name="horizontalLayout">
@@ -110,6 +91,11 @@
        </widget>
       </item>
      </layout>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QWidget" name="widget_2" native="true">
+     <layout class="QHBoxLayout" name="horizontalLayout_3"/>
     </widget>
    </item>
   </layout>

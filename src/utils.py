@@ -61,3 +61,12 @@ def get_pixmap(name):
 def get_icon_path(name):
     basedir = os.path.join(os.getcwd(), 'icons')
     return os.path.join(basedir, name)
+
+
+def check_index(value, data):
+    for i in range(len(data)):
+        if value > data[i]:
+            continue
+        else:
+            return i
+    return -1

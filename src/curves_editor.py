@@ -11,6 +11,7 @@ from PyQt5.uic import loadUiType
 import consts
 import curves
 import dialogs
+import utils
 import widgets
 from figure import CustomFigure
 
@@ -42,6 +43,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         super(CurvesEditor, self).__init__()
         self.point_binded = False
         self.shift_is_held = False
+        self.ctrl_is_held = False
         self.canvas = None
         self.toolbar = None
         self.setup_ui()
@@ -179,15 +181,24 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def __on_key_press(self, event):
         if event.key == 'shift':
             self.shift_is_held = True
+        if event.key == 'control':
+            self.ctrl_is_held = True
 
     def __on_key_release(self, event):
         self.shift_is_held = False
+        self.ctrl_is_held = False
 
     def __add_point(self, event):
         """
         Action for adding point. Click LPM to add point.
         :param event:
         """
+        if self.ctrl_is_held:
+            index = utils.check_index(
+                event.xdata,
+                self.active_curve.line.get_xdata()
+            )
+            self.bezier_split(self.active_curve.t_list[index])
         if event.button != consts.BUTTONS.get('LPM') or not self.active_curve:
             return
 
@@ -284,8 +295,8 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
     def bezier_degree_reduction(self, number):
         self.active_curve.degree_reduction(number)
 
-    def bezier_split(self):
-        left, right = self.active_curve.split()
+    def bezier_split(self, t):
+        left, right = self.active_curve.split(t)
         name = self.active_curve.name
         c_type = self.active_curve.type
         self.__delete_curve()
