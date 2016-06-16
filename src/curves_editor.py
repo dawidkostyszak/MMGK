@@ -3,7 +3,6 @@
 import json
 import os
 import matplotlib as mp
-import sys
 
 from PIL import Image
 from PyQt5 import QtCore, QtWidgets
@@ -593,9 +592,3 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
                 )
 
         self.canvas.draw()
-
-
-if __name__ == "__main__":
-    app = QtWidgets.QApplication(sys.argv)
-    ui = CurvesEditor()
-    sys.exit(app.exec_())
