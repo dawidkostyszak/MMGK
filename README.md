@@ -1,10 +1,25 @@
-Rodzaje krzywych:
+# Instalacja
+1. Klonujemy repozytorium: `git clone git@github.com:dawidkostyszak/MMGK.git`
+2. Wchodzimy do katalogu MMGK
+3. Tworzymy wirtualne środowisko: `virtualenv --no-site-packages env`
+4. Wpisujemy komendę: `. env/bin/activate` aby aktywować nasze wirtualne środowisko
+5. Instalujemy zależności: `pip install -r requirements.txt`
+6. Ściągamy bibliotekę SIP: `https://www.riverbankcomputing.com/software/sip/download`.
+7. Mając aktywowane wirtualne środowisko wchodizmy do folderu gdzie został ściągnięty SIP i rozpakowujemy go.
+8. Instalujemy SIP `python configure.py` później `make` następnie `sudo make install`
+9. Ściągamy bibliotekę PyQT5: `https://www.riverbankcomputing.com/software/pyqt/download5`
+10. Postępujemy tak samo jak w przypadku SIPa, krok 7 i 8. (Ewentualnie `http://pyqt.sourceforge.net/Docs/PyQt5/installation.html` sekcja `Building PyQt5`)
+
+# Uruchamianie
+`python main.py`
+
+# Rodzaje krzywych:
 - Krzywa parametryczna
-- Krzywa w postaci wielomianu Newtona
+- Krzywa w postaci wielomanowej Newtona
 - Krzywa Beziera
 - Wymierna krzywa Beziera
 
-Działa na krzywych:
+# Działania na krzywych:
 - Dodawanie krzywej
 - Edycja krzywej
 - Usuwanie i kopiowanie krzywej
@@ -13,21 +28,17 @@ Działa na krzywych:
 - Obniżanie stopnia krzywej dla wielomianowych i wymiernych krzywych Beziera
 - Podział krzywej Beziera na dwie części
 
-Działania na punktach:
+# Działania na punktach:
 - Dodawanie/usuwanie punktów
 - Zmiana wagi punktu w przypadku wymiernej krzywej Beziera
 
-Inne:
+# Inne:
 - Zmiana koloru i rodzaju linii
 - Ustalanie tła
 - Zapis jako obrazek
 - Zapis jako projekt
 - Wczytanie projektu
 
-WIP:
-- Transformacji krzywej w postaci Newtona do postaci wielomianowej Beziera
-
-TODO:
-- Parametryzacja podziału krzywej
-- Możliwość podwyższania i obniżania stopnia krzywej o więcej niż 1
-- Zmiana obniżania stopnia krzywej Beziera (inny sposób)
+# Do zrobienia:
+- Transformacja krzywej w postaci Newtona do postaci wielomianowej Beziera
+- Inny sposób obniżania stopnia krzywej Beziera
