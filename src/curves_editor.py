@@ -62,6 +62,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_layout.addWidget(self.curve_points)
         self.curves_layout.addWidget(self.rational_curve_points)
 
+        self.menubar.setVisible(True)
         self.edit.menuAction().setVisible(False)
         self.__toggle_curve_menu(False)
 
