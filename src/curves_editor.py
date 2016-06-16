@@ -64,7 +64,6 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_layout.addWidget(self.curve_points)
         self.curves_layout.addWidget(self.rational_curve_points)
 
-        self.menubar.setVisible(True)
         self.edit.menuAction().setVisible(False)
         self.__toggle_curve_menu(False)
 
@@ -150,7 +149,7 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
 
         self.cid_press = self.canvas.mpl_connect(
             'button_press_event',
-            self.__add_point
+            self.__point_event
         )
         self.cid_release = self.canvas.mpl_connect(
             'button_release_event',
@@ -188,12 +187,13 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.shift_is_held = False
         self.ctrl_is_held = False
 
-    def __add_point(self, event):
+    def __point_event(self, event):
         """
-        Action for adding point. Click LPM to add point.
+        Action for adding point and split curve. Click LPM to add point.
+        Click Alt + PPM to split curve.
         :param event:
         """
-        if self.ctrl_is_held:
+        if self.ctrl_is_held and event.button == consts.BUTTONS.get('PPM'):
             index = utils.check_index(
                 event.xdata,
                 self.active_curve.line.get_xdata()
