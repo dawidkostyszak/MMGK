@@ -6,9 +6,12 @@
 5. Instalujemy zależności: `pip install -r requirements.txt`
 6. Ściągamy bibliotekę SIP: `https://www.riverbankcomputing.com/software/sip/download`.
 7. Mając aktywowane wirtualne środowisko wchodizmy do folderu gdzie został ściągnięty SIP i rozpakowujemy go.
-8. Instalujemy SIP `python configure.py` później `make` następnie `sudo make install`
-9. Ściągamy bibliotekę PyQT5: `https://www.riverbankcomputing.com/software/pyqt/download5`
-10. Postępujemy tak samo jak w przypadku SIPa, krok 7 i 8. (Ewentualnie `http://pyqt.sourceforge.net/Docs/PyQt5/installation.html` sekcja `Building PyQt5`)
+8. Konfigurujemy SIP `python configure.py`
+9. Instalujemy SIP `sudo make` następnie `sudo make install`
+10. Ściągamy bibliotekę PyQT5: `https://www.riverbankcomputing.com/software/pyqt/download5`
+11. Mając aktywowane wirtualne środowisko wchodizmy do folderu gdzie został ściągnięty PyQT i rozpakowujemy go.
+12. Konfigurujemy PyQT `python configure.py --no-designer-plugin`
+13. Instalujemy PyQT `sudo make` następnie `sudo make install` (Ewentualnie `http://pyqt.sourceforge.net/Docs/PyQt5/installation.html` sekcja `Building PyQt5`)
 
 # Uruchamianie
 `python main.py`
