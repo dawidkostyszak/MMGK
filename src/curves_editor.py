@@ -39,19 +39,19 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         'press': False
     }
 
-    def __init__(self):
+    def __init__(self, interface):
         super(CurvesEditor, self).__init__()
         self.point_binded = False
         self.shift_is_held = False
         self.ctrl_is_held = False
         self.canvas = None
         self.toolbar = None
-        self.setup_ui()
+        self.setup_ui(interface)
         self.custom_settings()
         self.bind_actions()
         self.show()
 
-    def setup_ui(self):
+    def setup_ui(self, interface):
         super(CurvesEditor, self).setupUi(self)
 
         self.curves_list = widgets.CurvesList()
@@ -63,6 +63,9 @@ class CurvesEditor(QMainWindow, Ui_MainWindow):
         self.curves_layout.addWidget(self.edit_curve_data)
         self.curves_layout.addWidget(self.curve_points)
         self.curves_layout.addWidget(self.rational_curve_points)
+
+        if interface == 'gnome':
+            self.menubar.setVisible(True)
 
         self.edit.menuAction().setVisible(False)
         self.__toggle_curve_menu(False)

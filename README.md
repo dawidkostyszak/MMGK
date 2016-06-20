@@ -14,7 +14,9 @@
 13. Instalujemy PyQT `sudo make` następnie `sudo make install` (Ewentualnie `http://pyqt.sourceforge.net/Docs/PyQt5/installation.html` sekcja `Building PyQt5`)
 
 # Uruchamianie
-`python main.py`
+`python main.py` lub `python -i <interface>`
+
+<interface> jest to interfejs używany przez system {unity|gnome}, domyślnie ustawione jest Unity.
 
 # Rodzaje krzywych:
 - Krzywa parametryczna
